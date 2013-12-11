@@ -6,9 +6,16 @@ define([
   return {
     config : [
       'ide-layoutServiceProvider',
-      function(layoutService) {
+      function (layoutServiceProvider) {
 	console.log("[[code-review config]]");
-	presenter.init(layoutService);
+	presenter.config(layoutServiceProvider);
+      }
+    ],
+    run : [
+      'dialog-service',
+      function(dialogService) {
+	console.log("[[code-review run]]");
+	presenter.run(dialogService);
       }
     ],
   };
