@@ -33,6 +33,16 @@ define([
 	console.log('response:', comment);
   	reviewService.respondToReview(r, comment);
       });
+      $cmnt.keypress(function (event) {
+	/* `enter` is pressed. Note: `event.key` is `undefined` in Chrome */
+	if (event.keyCode === 13) {
+	  event.preventDefault();
+	  // Submit message
+	  var comment = $cmnt.val();
+	  console.log('response:', comment);
+	  reviewService.respondToReview(r, comment);
+	}
+      });
 
       for (var j = 0; j < r.comments.length; j++) {
 	var c = r.comments[j];
@@ -43,6 +53,7 @@ define([
       $r.append($('<div>' + r.title + '</label>'))
         .append($('<div>' + buildUserName(from) + '</label>'))
         .append($('<div>' + buildCommitName(r.commit, 40) + '</label>'))
+	.append($('<div><i>' + r.description + '</i></label>'))
 	.append($('<div>' + r.date + '</label>'))
 	.append($discussion)
 	.append($('<div></div>').append($cmnt))
