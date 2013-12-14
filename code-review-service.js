@@ -1,12 +1,9 @@
 define([
+  'bower_components/socket.io-client/dist/socket.io.min.js',
   'scripts/core/user',
   'scripts/core/event-bus',
-], function (userService, eventBus) {
+], function (io, userService, eventBus) {
   'use strict';
-
-  var pendingReviewRequests = [],
-      pendingResponseRequests = [],
-      reviewers = [];
 
   function getReviews(query) {
     var url = '/pull-requests' + (query ? '?' + $.param(query) : '');
@@ -49,19 +46,21 @@ define([
     });
   }
 
-  function getMySelf() {
-    var user = userService.getCache();
-
+  function getUserInfo(user) {
     return {
       fullName: user.fullName,
       email: user.email,
     }
   }
 
+  function getMySelf() {
+    return getUserInfo(userService.getCache());
+  }
+
   function sendReviewRequest(title, description, reviewer, commit) {
     var review = {
       author: getMySelf(),
-      reviewer: reviewer,
+      reviewer: getUserInfo(reviewer),
       title: title,
       description: description,
       commit: commit,
@@ -91,69 +90,61 @@ define([
     });
   }
 
-  function pollPendingReviewRequests() {
-    var reviews = [];
+  function getPendingReviews() {
+    /* Even when Ajax fails, return a resolved promise objects. */
+    var pendingRequests =
+      getReviews({ 'reviewer.email': getMySelf().email, pending: 'reviewer' })
+      .then(function (res) {
+	return $.when(res);
+      }, function (err) {
+	return $.when([]);
+      });
+    var pendingResponses =
+      getReviews({ 'author.email': getMySelf().email, pending: 'author' })
+      .then(function (res) {
+	return $.when(res);
+      }, function (err) {
+	return $.when([]);
+      });
 
-    getReviews({ 'author.email': getMySelf().email, pending: 'author' })
-      .fail(function (jqxhr, stat, err) { console.log(stat + ': ' + err); })
-      .done(function (result) {
-	console.log(result);
-	reviews = result;
-      })
-      .always(function () {
-	/* XXX Should work in our case */
-	if (reviews.length === pendingReviewRequests.length &&
-	  JSON.stringify(reviews) === JSON.stringify(pendingReviewRequests))
-	{
-	  return;
-	}
-	pendingReviewRequests = reviews;
-	eventBus.vent.trigger('code-review:review-requests');
+    return $.when(pendingRequests, pendingResponses)
+      .then(function (rs1, rs2) {
+	return rs1.concat(rs2);
       });
   }
 
-  function pollPendingResponseRequests() {
-    var reviews = [];
-
-    getReviews({ 'reviewer.email': getMySelf().email, pending: 'reviewer' })
-      .fail(function (jqxhr, stat, err) { console.log(stat + ': ' + err); })
-      .done(function (result) {
-	console.log(result);
-	reviews = result;
-      })
-      .always(function () {
-	/* XXX Should work in our case */
-	if (reviews.length === pendingResponseRequests.length &&
-	  JSON.stringify(reviews) === JSON.stringify(pendingResponseRequests))
-	{
-	  return;
-	}
-	pendingResponseRequests = reviews;
-	eventBus.vent.trigger('code-review:response-requests');
-      });
+  function getReviewers() {
+    return $.getJSON('/users').then(function (res) {
+      return $.when(res);
+    });
   }
 
-  function pollReviewers() {
-    $.getJSON('/users').done(function (users) {
-      reviewers = users;
+  function ioConnect(socket) {
+    socket.emit('auth', {email: getMySelf().email});
+    socket.on('review-change', function (review) {
+      if (review.pending === 'author' && review.author.email === getMySelf().email) {
+	eventBus.vent.trigger('code-review:add', review);
+	return;
+      }
+      if (review.pending === 'reviewer' && review.reviewer.email === getMySelf().email) {
+	eventBus.vent.trigger('code-review:add', review);
+	return;
+      }
+      eventBus.vent.trigger('code-review:rem', review);
     });
   }
 
   function run() {
-    /* XXX */
-    window.setInterval(function() {
-      pollPendingReviewRequests();
-      pollPendingResponseRequests();
-      pollReviewers();
-    }, 1997);
+    var socket = io.connect('/pull-requests');
+
+    socket.on('connect', function () { ioConnect(socket); });
   }
 
   return {
     run: run,
     sendReviewRequest: sendReviewRequest,
     respondToReview: respondToReview,
-    getPendingReviewRequests: function () { return pendingReviewRequests; },
-    getPendingResponseRequests: function () { return pendingResponseRequests; },
-    getReviewers: function () { return reviewers; },
+    getPendingReviews: getPendingReviews,
+    getReviewers: getReviewers,
   };
 });
