@@ -1,6 +1,7 @@
 define([
+  './code-review-service',
   './code-review-presenter',
-], function(presenter) {
+], function(reviewService, presenter) {
   'use strict';
 
   return {
@@ -15,6 +16,7 @@ define([
       'dialog-service',
       function(dialogService) {
 	console.log("[[code-review run]]");
+	reviewService.run();
 	presenter.run(dialogService);
       }
     ],

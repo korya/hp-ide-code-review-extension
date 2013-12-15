@@ -1,26 +1,74 @@
 define([
+  'scripts/core/event-bus',
+  './code-review-service',
   'css!./css/code-review.css',
-], function () {
+], function (eventBus, reviewService) {
   'use strict';
 
   var _dialogService;
   var $holder, $incoming;
+
+  function buildUserName(r) {
+    return r.fullName + ' &lt' + r.email + '&gt';
+  }
+  function buildCommitName(c, maxLen) {
+    var message = c.sha.substr(0, 7) + ' ' + c.title;
+    if (message.length > maxLen) message = message.substr(0, maxLen-3) + '...';
+    return message;
+  }
+
+  function setReviews(reviews) {
+    var $list = $('<div class="code-review-list"></div>');
+
+    for (var i = 0; i < reviews.length; i++) {
+      var r = reviews[i];
+      var $r = $('<div class="code-review-item"></div>');
+      var $discussion = $('<ul></ul>');
+      var $cmnt = $('<input type="text" name="review-comment"/>');
+      var $btn = $('<button type="button">Respond</button>');
+      var from = r.pending === 'reviewer' ? r.author : r.reviewer;
+
+      $btn.click(function () {
+	var comment = $cmnt.val();
+	console.log('response:', comment);
+  	reviewService.respondToReview(r, comment);
+      });
+
+      for (var j = 0; j < r.comments.length; j++) {
+	var c = r.comments[j];
+	$discussion.append($('<li><b>' + buildUserName(c.author) + '</b>: ' +
+	  c.message + '</li>'));
+      }
+
+      $r.append($('<div>' + r.title + '</label>'))
+        .append($('<div>' + buildUserName(from) + '</label>'))
+        .append($('<div>' + buildCommitName(r.commit, 40) + '</label>'))
+	.append($('<div>' + r.date + '</label>'))
+	.append($discussion)
+	.append($('<div></div>').append($cmnt))
+	.append($('<div></div>').append($btn))
+	.appendTo($list);
+    }
+    $incoming.empty();
+    $list.append($('<li><p>No more pending pull requests</p></li>'));
+    $incoming.append($list);
+  }
 
   function createReviewDialog(commits, reviewers) {
     var $title = $('<input type="text" />');
     var $commit = $('<select></select>');
     var $reviewer = $('<select></select>');
     var $description = $('<textarea cols="90" rows="5"></textarea>');
+    var $error = $('<div><span class="create-review-error"></span></div>');
 
     function addCommits(commits) {
       $commit.empty();
       $commit.append('<option disabled>Select commit</option>');
       for (var i = 0; i < commits.length; i++) {
 	var commit = commits[i];
-	var message = commit.sha.substr(0, 7) + ' ' + commit.title;
 
-	if (message.length > 80) message = message.substr(0, 77) + '...';
-	$commit.append('<option value="' + i + '">' + message + '</option>');
+	$commit.append('<option value="' + i + '">' +
+	    buildCommitName(commit, 80) + '</option>');
       }
     }
     function addReviewers(reviewers) {
@@ -28,7 +76,7 @@ define([
       $reviewer.append('<option disabled>Select reviewer</option>');
       for (var i = 0; i < reviewers.length; i++) {
 	var reviewer = reviewers[i];
-	var message = reviewer.name + ' &lt' + reviewer.mail + '&gt';
+	var message = buildUserName(reviewer);
 
 	$reviewer.append('<option value="' + i + '">' + message + '</option>');
       }
@@ -45,14 +93,6 @@ define([
       dialog.enableButton('OK');
       return true;
     }
-    function assembleReview() {
-      return {
-	reviewer: reviewers[parseInt($reviewer.val())],
-	title: $title.val(),
-	description: $description.val(),
-	commit: commits[parseInt($commit.val())],
-      };
-    }
 
     var dialog = _dialogService.createDialog('Create pull request', {
       closeOnEscape: true,
@@ -68,9 +108,15 @@ define([
 	title: 'OK',
 	handler: function() {
 	  if (!validate(dialog)) return;
-	  var review = assembleReview();
-	  console.log('New review:', review);
-	  dialog.close();
+	  var title = $title.val();
+	  var desc = $description.val();
+	  var commit = commits[parseInt($commit.val())];
+	  var review = reviewers[parseInt($reviewer.val())];
+
+	  $error.hide();
+	  reviewService.sendReviewRequest(title, desc, review, commit)
+            .fail(function (err) { $error.text(JSON.stringify(err)).show(); })
+            .done(function () { dialog.close(); });
 	}
       },
       {
@@ -87,7 +133,8 @@ define([
 	.append($('<div>Reviewer:</div>').append($reviewer))
 	.append($('<div>Commit:</div>').append($commit))
 	.append($('<div>Description:</div>').append('<br/>')
-	  .append($description));
+	  .append($description))
+	.append($error);
 //       validate(dialog);
     });
 
@@ -112,18 +159,12 @@ define([
         { sha: 'fff6dc6f9cd9ac1a4ce0ff8c60bd2b8d452a99a7', title: 'D' },
         { sha: '5bcd5501c916c0067d01a5ad3f68ce62e56519aa', title: 'E' },
       ];
-      var reviewers = [
-        { name: 'liron', mail: 'liron@hp' },
-        { name: 'denis', mail: 'denis@t2' },
-        { name: 'dima', mail: 'dima@t2' },
-      ];
-      createReviewDialog(commits, reviewers);
+      createReviewDialog(commits, reviewService.getReviewers());
     });
     $create.append($sendButton).appendTo($holder);
 
-    $incoming = $('<div id="code-review-incoming"/>')
-      .append($('<p>No pending pull requests</p>'))
-      .appendTo($holder);
+    $incoming = $('<div id="code-review-incoming"/>').appendTo($holder);
+    setReviews([]);
   }
 
   function config(layoutServiceProvider) {
@@ -138,6 +179,22 @@ define([
 
   function run(dialogService) {
     _dialogService = dialogService;
+
+    var pending = {
+      reviews: [],
+      responses: [],
+      all: [],
+    };
+    eventBus.vent.on('code-review:review-requests', function () {
+      pending.reviews = reviewService.getPendingReviewRequests();
+      pending.all = pending.reviews.concat(pending.responses);
+      setReviews(pending.all);
+    });
+    eventBus.vent.on('code-review:response-requests', function () {
+      pending.responses = reviewService.getPendingResponseRequests();
+      pending.all = pending.reviews.concat(pending.responses);
+      setReviews(pending.all);
+    });
   }
 
   return {
