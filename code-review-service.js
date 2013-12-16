@@ -5,6 +5,9 @@ define([
 ], function (io, userService, eventBus) {
   'use strict';
 
+  var gitService,
+      projectsService;
+
   function getReviews(query) {
     var url = '/pull-requests' + (query ? '?' + $.param(query) : '');
 
@@ -119,6 +122,13 @@ define([
     });
   }
 
+  function getCommitList() {
+    var project = projectsService.getActiveProject();
+    var repo = project.id;
+
+    return gitService.log(repo);
+  }
+
   function ioConnect(socket) {
     socket.emit('auth', {email: getMySelf().email});
     socket.on('review-change', function (review) {
@@ -134,10 +144,13 @@ define([
     });
   }
 
-  function run() {
+  function run(gitS, projectsS) {
     var socket = io.connect('/pull-requests');
 
     socket.on('connect', function () { ioConnect(socket); });
+
+    gitService = gitS;
+    projectsService = projectsS;
   }
 
   return {
@@ -146,5 +159,6 @@ define([
     respondToReview: respondToReview,
     getPendingReviews: getPendingReviews,
     getReviewers: getReviewers,
+    getCommitList: getCommitList,
   };
 });

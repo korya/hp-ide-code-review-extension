@@ -13,7 +13,7 @@ define([
     return r.fullName + ' &lt' + r.email + '&gt';
   }
   function buildCommitName(c, maxLen) {
-    var message = c.sha.substr(0, 7) + ' ' + c.title;
+    var message = c.sha1.substr(0, 7) + ' ' + c.message;
     if (message.length > maxLen) message = message.substr(0, maxLen-3) + '...';
     return message;
   }
@@ -202,13 +202,7 @@ define([
     var $create = $('<div id="code-review-create"/>');
     var $sendButton = $('<button type="button">Send Pull Request</button>');
     $sendButton.click(function () {
-      var commits = [
-	{ sha: '6f2851f8fe057fad01a568a3503d396e591b5c75', title: 'C' },
-        { sha: 'fff6dc6f9cd9ac1a4ce0ff8c60bd2b8d452a99a7', title: 'D' },
-        { sha: '5bcd5501c916c0067d01a5ad3f68ce62e56519aa', title: 'E' },
-      ];
-
-      createReviewDialog($.when(commits), reviewService.getReviewers());
+      createReviewDialog(reviewService.getCommitList(), reviewService.getReviewers());
     });
     $create.append($sendButton).appendTo($holder);
 
