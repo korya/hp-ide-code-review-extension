@@ -140,6 +140,12 @@ define([
     }, function (err) { console.log(err); });
   }
 
+  function getFileRevision(repo, file, revision) {
+    return gitService.showFile(repo, file, revision).then(function (res) {
+      return $.when(res);
+    });
+  }
+
   function ioConnect(socket) {
     socket.emit('auth', {email: getMySelf().email});
     socket.on('review-change', function (review) {
@@ -172,5 +178,6 @@ define([
     getReviewers: getReviewers,
     getCommitList: getCommitList,
     getCommitDetails: getCommitDetails,
+    getFileRevision: getFileRevision,
   };
 });

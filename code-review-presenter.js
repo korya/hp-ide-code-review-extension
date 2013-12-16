@@ -12,8 +12,11 @@ define([
   function buildUserName(r) {
     return r.fullName + ' &lt' + r.email + '&gt';
   }
+  function buildSha1Abbrev(sha1) {
+    return sha1.substr(0, 7); // Just truncate it
+  }
   function buildCommitName(c, maxLen) {
-    var message = c.sha1.substr(0, 7) + ' "' + c.message + '"';
+    var message = buildSha1Abbrev(c.sha1) + ' "' + c.message + '"';
     if (message.length > maxLen) message = message.substr(0, maxLen-3) + '...';
     return message;
   }
@@ -21,18 +24,41 @@ define([
     return 'code-review-item-' + r._id;
   }
 
-  function createDiffEditor(commit, file) {
-    var id = file.path + '@' + commit.sha1;
+  function createDiffEditor(repo, commit, file) {
+    var sha1Abbrev = buildSha1Abbrev(commit.sha1);
+    var id = commit.sha1 + ':' + file.path;
     var contentType = { id: "diff/text" };
-    var data = '';
-    var title = 'show diff';
-    var metaData = {
-      projectId: 'qweqwe',
-      itemId: '/workspace/user/tenant/qweqwe/q.js',
+    var title = sha1Abbrev + ':' + file.path;
+    var compare = {
+      //type: 'inline',
+      files: [
+	{
+	  name: sha1Abbrev + '~' + ':' + file.path,
+	  content: 'Fetching...',
+	},
+	{
+	  name: sha1Abbrev + ':' + file.path,
+	  content: 'Fetching...',
+	}
+      ]
     };
+    var metaData = {
+      compare: compare,
+    };
+    var contents = [
+      (file.action === 'added') ? $.when('') : reviewService.getFileRevision(repo, file.path, commit.sha1 + '~'),
+      (file.action === 'removed') ? $.when('') : reviewService.getFileRevision(repo, file.path, commit.sha1),
+    ];
 
-    console.log('open editor', {id:id, type:contentType, data:data, title:title, metaData:metaData});
-    return _editorsService.createNewEditor(id, contentType, data, title, metaData);
+    console.log('open editor', {id:id, type:contentType, data:'', title:title, metaData:metaData});
+    var editor = _editorsService.createNewEditor(id, contentType, '', title, metaData);
+    $.when.apply(this, contents)
+      .then(function (oldContent, newContent) {
+	editor.setContent([oldContent, newContent]);
+      }, function (err) {
+	console.error('failed to load', id, ':', err);
+	editor.setContent([err, '']);
+      });
   }
 
   function showCommitInfo(r) {
@@ -60,7 +86,7 @@ define([
 	});
 	$f.dblclick(function () {
 	  console.log('git diff ' + c.sha1 + '~ ' + c.sha1 + ' ' + f.path);
-	  createDiffEditor(c, f);
+	  createDiffEditor(repo, c, f);
 	});
 	$f.appendTo($commit);
       });
