@@ -13,12 +13,46 @@ define([
     return r.fullName + ' &lt' + r.email + '&gt';
   }
   function buildCommitName(c, maxLen) {
-    var message = c.sha1.substr(0, 7) + ' ' + c.message;
+    var message = c.sha1.substr(0, 7) + ' "' + c.message + '"';
     if (message.length > maxLen) message = message.substr(0, maxLen-3) + '...';
     return message;
   }
   function buildReviewItemId(r) {
     return 'code-review-item-' + r._id;
+  }
+
+  function showCommitInfo(r) {
+    var $commit = $('<div>');
+    var repo = r.repo;
+    var sha1 = r.commit.sha1;
+    var message = buildCommitName({ sha1: sha1, title: '' }, 40);
+    
+    $commit.append('<div>' + message + '</div>');
+    reviewService.getCommitDetails(repo, sha1).then(function (c) {
+      $commit.empty();
+      $commit.append('<div>' + buildCommitName(c, 40) + '</div>');
+      if (!c.files.length) {
+	$commit.append('<div>No files were changed in this commit</div>');
+      }
+      for (var i = 0; i < c.files.length; i++) {
+	var f = c.files[i];
+	var $f = $('<div>' + f.path + '</div>');
+
+	if (f.action === 'added') $f.css('color', 'green');
+	else if (f.action === 'removed') $f.css('color', 'red');
+	else $f.css('color', '#FF6600');
+
+	$f.hover(function () {
+	  $(this).css("cursor", "pointer");
+	});
+	$f.dblclick(function () {
+	  console.log('open: git diff ' + c.sha1 + '~ ' + c.sha1 + ' ' + f.path);
+	});
+	$f.appendTo($commit);
+      }
+    });
+
+    return $commit;
   }
 
   function appendReviewItem(r) {
@@ -46,11 +80,11 @@ define([
 	    c.message + '</li>'));
     }
 
-    $r.append($('<div>' + r.title + '</label>'))
-      .append($('<div>' + buildUserName(from) + '</label>'))
-      .append($('<div>' + buildCommitName(r.commit, 40) + '</label>'))
-      .append($('<div><i>' + r.description + '</i></label>'))
-      .append($('<div>' + r.date + '</label>'))
+    $r.append($('<div>' + r.title + '</div>'))
+      .append($('<div>' + buildUserName(from) + '</div>'))
+      .append(showCommitInfo(r))
+      .append($('<div><i>' + r.description + '</i></div>'))
+      .append($('<div>' + r.date + '</div>'))
       .append($discussion)
       .append($('<div></div>').append($cmnt))
       .append($('<div></div>').append($btn))

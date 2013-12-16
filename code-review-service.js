@@ -66,7 +66,10 @@ define([
       reviewer: getUserInfo(reviewer),
       title: title,
       description: description,
-      commit: commit,
+      repo: projectsService.getActiveProject().id,
+      commit: {
+	sha1: commit.sha1,
+      },
       date: (new Date).toUTCString(),
     }
 
@@ -126,7 +129,15 @@ define([
     var project = projectsService.getActiveProject();
     var repo = project.id;
 
-    return gitService.log(repo);
+    return gitService.log(repo).then(function (res) {
+      return $.when(res);
+    });
+  }
+
+  function getCommitDetails(repo, sha1) {
+    return gitService.commitShow(repo, sha1).then(function (res) {
+      return $.when(res);
+    }, function (err) { console.log(err); });
   }
 
   function ioConnect(socket) {
@@ -160,5 +171,6 @@ define([
     getPendingReviews: getPendingReviews,
     getReviewers: getReviewers,
     getCommitList: getCommitList,
+    getCommitDetails: getCommitDetails,
   };
 });
