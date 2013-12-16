@@ -5,7 +5,7 @@ define([
 ], function (eventBus, reviewService) {
   'use strict';
 
-  var _dialogService;
+  var _dialogService, _editorsService;
   var $holder, $incoming, $reviewList, $reviewListEmptyMessage;
   var reviewItemMap = {};
 
@@ -21,6 +21,20 @@ define([
     return 'code-review-item-' + r._id;
   }
 
+  function createDiffEditor(commit, file) {
+    var id = file.path + '@' + commit.sha1;
+    var contentType = { id: "diff/text" };
+    var data = '';
+    var title = 'show diff';
+    var metaData = {
+      projectId: 'qweqwe',
+      itemId: '/workspace/user/tenant/qweqwe/q.js',
+    };
+
+    console.log('open editor', {id:id, type:contentType, data:data, title:title, metaData:metaData});
+    return _editorsService.createNewEditor(id, contentType, data, title, metaData);
+  }
+
   function showCommitInfo(r) {
     var $commit = $('<div>');
     var repo = r.repo;
@@ -34,8 +48,7 @@ define([
       if (!c.files.length) {
 	$commit.append('<div>No files were changed in this commit</div>');
       }
-      for (var i = 0; i < c.files.length; i++) {
-	var f = c.files[i];
+      _.forEach(c.files, function (f) {
 	var $f = $('<div>' + f.path + '</div>');
 
 	if (f.action === 'added') $f.css('color', 'green');
@@ -46,10 +59,11 @@ define([
 	  $(this).css("cursor", "pointer");
 	});
 	$f.dblclick(function () {
-	  console.log('open: git diff ' + c.sha1 + '~ ' + c.sha1 + ' ' + f.path);
+	  console.log('git diff ' + c.sha1 + '~ ' + c.sha1 + ' ' + f.path);
+	  createDiffEditor(c, f);
 	});
 	$f.appendTo($commit);
-      }
+      });
     });
 
     return $commit;
@@ -259,8 +273,9 @@ define([
     });
   }
 
-  function run(dialogService) {
+  function run(dialogService, editorsService) {
     _dialogService = dialogService;
+    _editorsService = editorsService;
 
     eventBus.vent.on('code-review:add', appendReviewItem);
     eventBus.vent.on('code-review:rem', removeReviewItem);

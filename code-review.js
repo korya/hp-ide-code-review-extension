@@ -13,11 +13,11 @@ define([
       }
     ],
     run : [
-      'dialog-service', 'git-service', 'projects-service',
-      function(dialogService, gitService, projectsService) {
+      'dialog-service', 'git-service', 'projects-service', 'editors-service',
+      function(dialogService, gitService, projectsService, editorsService) {
 	console.log("[[code-review run]]");
 	reviewService.run(gitService, projectsService);
-	presenter.run(dialogService);
+	presenter.run(dialogService, editorsService);
       }
     ],
   };
