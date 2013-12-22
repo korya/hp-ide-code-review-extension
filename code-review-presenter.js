@@ -121,7 +121,7 @@ define([
     };
 
     $commit.prop("disabled", true);
-    $commit.append('<option disabled>Loading commiters...</option>');
+    $commit.append('<option disabled>Loading commits...</option>');
     cPromise
       .always(function () {
 	console.log('  ### commit always');
