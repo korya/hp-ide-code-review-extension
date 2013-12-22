@@ -127,9 +127,12 @@ define([
 
   function getCommitList() {
     var project = _projectsService.getActiveProject();
-    var repo = project.id;
 
-    return _gitService.log(repo).then(function (res) {
+    if (!project) {
+      return (new $.Deferred()).reject('no active project').promise();
+    }
+
+    return _gitService.log(project.id).then(function (res) {
       return $.when(res);
     });
   }
