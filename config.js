@@ -7,7 +7,7 @@ define({
     {
       id: 'code-review',
       main: 'code-review',
-      dependencies: []
+      dependencies: ['orion-compare', 'projects-service', 'git-service']
     }
   ]
 });

@@ -5,8 +5,8 @@ define([
 ], function (io, userService, eventBus) {
   'use strict';
 
-  var gitService,
-      projectsService;
+  var _gitService,
+      _projectsService;
 
   function getReviews(query) {
     var url = '/pull-requests' + (query ? '?' + $.param(query) : '');
@@ -66,7 +66,7 @@ define([
       reviewer: getUserInfo(reviewer),
       title: title,
       description: description,
-      repo: projectsService.getActiveProject().id,
+      repo: _projectsService.getActiveProject().id,
       commit: {
 	sha1: commit.sha1,
       },
@@ -126,22 +126,22 @@ define([
   }
 
   function getCommitList() {
-    var project = projectsService.getActiveProject();
+    var project = _projectsService.getActiveProject();
     var repo = project.id;
 
-    return gitService.log(repo).then(function (res) {
+    return _gitService.log(repo).then(function (res) {
       return $.when(res);
     });
   }
 
   function getCommitDetails(repo, sha1) {
-    return gitService.commitShow(repo, sha1).then(function (res) {
+    return _gitService.commitShow(repo, sha1).then(function (res) {
       return $.when(res);
     }, function (err) { console.log(err); });
   }
 
   function getFileRevision(repo, file, revision) {
-    return gitService.showFile(repo, file, revision).then(function (res) {
+    return _gitService.showFile(repo, file, revision).then(function (res) {
       return $.when(res);
     });
   }
@@ -161,13 +161,13 @@ define([
     });
   }
 
-  function run(gitS, projectsS) {
+  function run(gitService, projectsService) {
     var socket = io.connect('/pull-requests');
 
     socket.on('connect', function () { ioConnect(socket); });
 
-    gitService = gitS;
-    projectsService = projectsS;
+    _gitService = gitService;
+    _projectsService = projectsService;
   }
 
   return {
