@@ -106,19 +106,25 @@ define([
     var splitpath = file.path.replace(/^\/|\/$/g, '').split('/');
     var i;
 
-    for (i = 0; i < splitpath.length - 1; i++)
-    {
-      tree = tree.addChild({
-	title: splitpath[i],
-	isFolder: true,
-      });
+    for (i = 0; i < splitpath.length - 1; i++) {
+      var dirname = splitpath[i];
+      var dir = _.find(tree.getChildren(), { data: { title: dirname } });
+
+      if (dir) {
+	tree = dir;
+      } else {
+	tree = tree.addChild({
+	  title: dirname,
+	  isFolder: true,
+	});
+      }
     }
 
     tree.addChild({
       title: splitpath[i],
       key: file.path,
       tooltip: getFileTooltip(file),
-      addClass: getFileTypeClass(name) + '-icon ' + getActionClass(file.action),
+      addClass: getFileTypeClass(file.path) + '-icon ' + getActionClass(file.action),
       repo: repo,
       commit: commit,
       file: file,
@@ -298,6 +304,30 @@ define([
     }
   }
 
+  function openReviewSubPane($rSummary) {
+    var review = $rSummary.data('review');
+    var id = 'code-review-' + review._id;
+    var subPane = _layoutService.getSubPane(id);
+
+    $rSummary.removeClass('code-review-unread-comments');
+
+    if (!subPane) {
+      subPane = _layoutService.createSubPane({
+	pane: 'east',
+	title: review.title,
+	id: id,
+	removable: true,
+	render: function (subPane) {
+	  var $rDetails = showReviewDetails(review);
+	  setReviewState($(''), $rDetails, review);
+	  $(subPane.getDomElement()).append($rDetails);
+	},
+      });
+    }
+
+    subPane.select();
+  }
+
   function addReviewItem(r) {
     var $rSummary = $('<div>').attr('id', buildReviewItemId(r))
       .addClass('code-review-preview');
@@ -310,20 +340,7 @@ define([
       .append($('<div><label>Date:</label>' + r.date + '</div>').addClass('code-review-date'));
 
     $rSummary.click(function () {
-      var review = $rSummary.data('review');
-      $rSummary.removeClass('code-review-unread-comments');
-      var subPane = _layoutService.createSubPane({
-	pane: 'east',
-	title: review.title,
-	id: 'code-review-' + review._id,
-	removable: true,
-	render: function (subPane) {
-	  var $rDetails = showReviewDetails(review);
-	  setReviewState($(''), $rDetails, review);
-	  $(subPane.getDomElement()).append($rDetails);
-	},
-      });
-      subPane.select();
+      openReviewSubPane($rSummary);
     });
 
     setReviewState($rSummary, $(''), r);
