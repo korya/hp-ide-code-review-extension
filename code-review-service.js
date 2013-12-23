@@ -146,6 +146,19 @@ define([
   function getFileRevision(repo, file, revision) {
     return _gitService.showFile(repo, file, revision).then(function (res) {
       return $.when(res);
+    }, function (xhr) {
+      var error = '';
+      if (xhr.responseJSON.error) {
+	error += xhr.responseJSON.error.error;
+	error += '\n\n';
+	error += xhr.responseJSON.error.command;
+	error += '\n\n';
+	error += xhr.responseJSON.error.stackAtCall;
+      } else {
+	error += xhr.responseText;
+      }
+      console.error('error:', xhr, '; e:', error);
+      return $.Deferred().reject(error).promise();
     });
   }
 
