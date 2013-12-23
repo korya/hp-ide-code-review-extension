@@ -206,5 +206,6 @@ define([
     getCommitDetails: getCommitDetails,
     getFileRevision: getFileRevision,
     changeReviewState: postReviewState,
+    getMySelf: getMySelf,
   };
 });

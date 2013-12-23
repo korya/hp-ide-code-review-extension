@@ -73,14 +73,17 @@ div.code-review-preview .code-review-date {
   background-color: #FFAAAA;
 }
 
-input[name="review-approve"] {
+button[name*="review-approve"] {
   position: relative;
-  left: 0px;
-  width: 64%;
+  width: 45%;
 }
 
-input[name="review-reject"] {
+button[name*="review-reject"] {
   position: relative;
-  right: 0px;
-  width: 34%;
+  width: 37%;
+}
+
+button[name*="review-undo"] {
+  position: relative;
+  width: 18%;
 }

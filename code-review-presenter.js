@@ -193,8 +193,6 @@ define([
     var $discussion = $('<ul></ul>').addClass('code-review-discussion');
     var $commentInput = $('<input type="text" name="review-comment"/>');
     var $commentBtn = $('<button type="button" name="review-comment">Respond</button>');
-    var $approvedBtn = $('<button type="button" name="review-approve">Accept</button>');
-    var $rejectBtn = $('<button type="button" name="review-reject">Reject</button>');
 
     $commentBtn.click(function () {
       var comment = $commentInput.val();
@@ -208,13 +206,6 @@ define([
 	$commentBtn.trigger("click");
       }
     });
-    $approvedBtn.click(function () {
-      reviewService.changeReviewState(review, 'approved');
-    });
-    $rejectBtn.click(function () {
-      reviewService.changeReviewState(review, 'rejected');
-    });
-
     if (!review.comments) review.comments = [];
     appendReviewComments($discussion, review.comments);
 
@@ -227,8 +218,29 @@ define([
       .append($('<div><label>Description: </label><i>' + review.description + '</i></div>'))
       .append($('<div><label>Commits: </label></div>').append($commits))
       .append($('<div><label>Discussion: </label></div>').append($discussion))
-      .append($('<div>').append($commentInput).append($commentBtn))
-      .append($('<div>').append($approvedBtn).append($rejectBtn));
+      .append($('<div>').append($commentInput).append($commentBtn));
+
+    if (review.reviewer.email === reviewService.getMySelf().email) {
+      var $approvedBtn = $('<button type="button" name="review-approve">Approve</button>');
+      var $rejectBtn = $('<button type="button" name="review-reject">Reject</button>');
+      var $undoBtn = $('<button type="button" name="review-undo">Undo</button>');
+
+      $approvedBtn.click(function () {
+	reviewService.changeReviewState(review, 'approved');
+      });
+      $rejectBtn.click(function () {
+	reviewService.changeReviewState(review, 'rejected');
+      });
+      $undoBtn.click(function () {
+	reviewService.changeReviewState(review, 'pending');
+      });
+
+      $('<div>')
+	.append($approvedBtn)
+	.append($rejectBtn)
+	.append($undoBtn)
+	.appendTo($review);
+    }
 
     return $review;
   }
