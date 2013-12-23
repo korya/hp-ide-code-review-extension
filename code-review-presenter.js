@@ -1,11 +1,12 @@
 define([
   'scripts/core/event-bus',
   './code-review-service',
+  /* Assume dynatree was already loaded by project-tree */
   'css!./css/code-review.css',
 ], function (eventBus, reviewService) {
   'use strict';
 
-  var _dialogService, _editorsService;
+  var _dialogService, _editorsService, _layoutService;
   var $holder, $incoming, $reviewList, $reviewListEmptyMessage;
   var reviewItemMap = {};
 
@@ -24,13 +25,12 @@ define([
     return 'code-review-item-' + r._id;
   }
 
-  function createDiffEditor(repo, commit, file) {
+  function createDiffEditor(id, repo, commit, file, type) {
     var sha1Abbrev = buildSha1Abbrev(commit.sha1);
-    var id = commit.sha1 + ':' + file.path;
     var contentType = { id: "diff/text" };
     var title = sha1Abbrev + ':' + file.path;
     var compare = {
-      //type: 'inline',
+      type: type || 'inline',
       files: [
 	{
 	  name: sha1Abbrev + '~' + ':' + file.path,
@@ -61,42 +61,122 @@ define([
       });
   }
 
-  function showCommitInfo(r) {
-    var $commit = $('<div>');
-    var repo = r.repo;
-    var sha1 = r.commit.sha1;
-    var message = buildCommitName({ sha1: sha1, title: '' }, 40);
-    
-    $commit.append('<div>' + message + '</div>');
-    reviewService.getCommitDetails(repo, sha1).then(function (c) {
-      $commit.empty();
-      $commit.append('<div>' + buildCommitName(c, 40) + '</div>');
-      if (!c.files.length) {
-	$commit.append('<div>No files were changed in this commit</div>');
-      }
-      _.forEach(c.files, function (f) {
-	var $f = $('<div>' + f.path + '</div>');
+  function openDiffEditor(repo, commit, file, type) {
+    var id = type + '@' + commit.sha1 + ':' + file.path;
 
-	if (f.action === 'added') $f.css('color', 'green');
-	else if (f.action === 'removed') $f.css('color', 'red');
-	else $f.css('color', '#FF6600');
+    if (_editorsService.getEditor(id)) {
+      return _editorsService.setActiveEditor(id);
+    }
+    return createDiffEditor(id, repo, commit, file, type);
+  }
 
-	$f.hover(function () {
-	  $(this).css("cursor", "pointer");
-	});
-	$f.dblclick(function () {
-	  console.log('git diff ' + c.sha1 + '~ ' + c.sha1 + ' ' + f.path);
-	  createDiffEditor(repo, c, f);
-	});
-	$f.appendTo($commit);
+  /* Taken from project-tree code */
+  function getFileTypeClass(fileName) {
+    var fileExtension = fileName.substr(fileName.lastIndexOf('.') + 1).toLowerCase();
+
+    switch (fileExtension) {
+      case 'png':
+	return 'image';
+      case 'jpg':
+	return 'image';
+      default:
+	return fileExtension;
+    }
+  }
+
+  function getActionClass(action) {
+    switch (action) {
+      case 'added': return 'code-review-added-file';
+      case 'removed': return 'code-review-removed-file';
+      case 'changed': return 'code-review-changed-file';
+      default: return '';
+    }
+  }
+
+  function getFileTooltip(file) {
+    switch (file.action) {
+      case 'added': return 'New file';
+      case 'removed': return 'Removed file';
+      case 'changed': return 'Changed file';
+      default: return '';
+    }
+  }
+
+  function addFileToTree(repo, commit, file, tree) {
+    var splitpath = file.path.replace(/^\/|\/$/g, '').split('/');
+    var i;
+
+    for (i = 0; i < splitpath.length - 1; i++)
+    {
+      tree = tree.addChild({
+	title: splitpath[i],
+	isFolder: true,
       });
+    }
+
+    tree.addChild({
+      title: splitpath[i],
+      key: file.path,
+      tooltip: getFileTooltip(file),
+      addClass: getFileTypeClass(name) + '-icon ' + getActionClass(file.action),
+      repo: repo,
+      commit: commit,
+      file: file,
+    });
+  }
+
+  function onNodeDblClick(node) {
+    var repo = node.data.repo;
+    var commit = node.data.commit;
+    var file = node.data.file;
+
+    console.log('git diff ' + commit.sha1 + '~ ' + commit.sha1 + ' ' + file.path);
+    openDiffEditor(repo, commit, file, 'twoWay');
+  }
+
+  function showCommitInfo(r, sha1) {
+    var repo = r.repo;
+    var $filetree = $('<div>').attr('id', sha1 + '-file-tree');
+    var treeRoot;
+
+    /* These settings are taken from project-tree code */
+    $filetree.dynatree({
+      debugLevel: 0,
+      minExpandLevel: 1,
+      persist: true,
+      fx: { height: "toggle", duration: 200 },
+      onDblClick: onNodeDblClick,
     });
 
-    return $commit;
+    treeRoot = $filetree.dynatree('getRoot').addChild({
+      title: buildSha1Abbrev(sha1),
+      isFolder: true,
+      tooltip: 'Commit ' + buildSha1Abbrev(sha1) + ' file tree',
+    });
+
+    treeRoot.setLazyNodeStatus(DTNodeStatus_Loading);
+    reviewService.getCommitDetails(repo, sha1).then(function (commit) {
+      treeRoot.data.title = buildCommitName(commit, 40);
+      treeRoot.data.tooltip = [
+        'SHA1: ' + commit.sha1,
+        'Author: ' + commit.author,
+        'Author Date: ' + commit.authorDate,
+        'Committer: ' + commit.committer,
+        'Commit Date: ' + commit.commitDate,
+        'Message: ' + commit.message,
+      ].join('\n');
+      treeRoot.setLazyNodeStatus(DTNodeStatus_Ok);
+      for (var i = 0; i < commit.files.length; i++) {
+	addFileToTree(repo, commit, commit.files[i], treeRoot);
+      }
+    });
+
+    return $filetree;
   }
 
   function appendReviewItem(r) {
     var $r = $('<div id="' + buildReviewItemId(r) + '"></div>');
+    var $commits = $('<div><label>Commits:</label></div>');
     var $discussion = $('<ul></ul>');
     var $cmnt = $('<input type="text" name="review-comment"/>');
     var $btn = $('<button type="button">Respond</button>');
@@ -120,16 +200,39 @@ define([
 	    c.message + '</li>'));
     }
 
-    $r.append($('<div>' + r.title + '</div>'))
-      .append($('<div>' + buildUserName(from) + '</div>'))
-      .append(showCommitInfo(r))
-      .append($('<div><i>' + r.description + '</i></div>'))
-      .append($('<div>' + r.date + '</div>'))
+    $commits.append(showCommitInfo(r, r.commit.sha1));
+
+    $r.append($('<div>Title: ' + r.title + '</div>'))
+      .append($('<div>From: ' + buildUserName(from) + '</div>'))
+      .append($commits)
+      .append($('<div>Description: <i>' + r.description + '</i></div>'))
+      .append($('<div>Date: ' + r.date + '</div>'))
       .append($discussion)
       .append($('<div></div>').append($cmnt))
-      .append($('<div></div>').append($btn))
+      .append($('<div></div>').append($btn));
+
+    var $rPreview = $('<div>').attr('id', 'preview-' + buildReviewItemId(r))
+      .addClass('code-review-preview');
+
+    $rPreview
+      .append($('<div>Title:' + r.title + '</div>').addClass('code-review-title'))
+      .append($('<div>From: ' + buildUserName(from) + '</div>').addClass('code-review-from'))
+      .append($('<div>Date: ' + r.date + '</div>').addClass('code-review-date'))
       .appendTo($reviewList);
     $reviewListEmptyMessage.hide();
+
+    $rPreview.click(function () {
+      var subPane = _layoutService.createSubPane({
+	pane: 'east',
+	title: r.title,
+	id: 'code-review-' + r._id,
+	removable: true,
+	render: function (subPane) {
+	  $(subPane.getDomElement()).append($r);
+	}
+      });
+      subPane.select();
+    });
 
     return $r;
   }
@@ -139,6 +242,7 @@ define([
 
     if (!$r.length) return;
 
+    _layoutService.removeSubPane('code-review-' + r._id);
     $r.remove();
     if (!$reviewList.children().length)
       $reviewListEmptyMessage.show();
@@ -299,9 +403,10 @@ define([
     });
   }
 
-  function run(dialogService, editorsService) {
+  function run(dialogService, editorsService, layoutService) {
     _dialogService = dialogService;
     _editorsService = editorsService;
+    _layoutService = layoutService;
 
     eventBus.vent.on('code-review:add', appendReviewItem);
     eventBus.vent.on('code-review:rem', removeReviewItem);

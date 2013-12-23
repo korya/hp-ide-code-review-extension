@@ -29,3 +29,34 @@ span.code-review-error {
   left: 0px;
   width: 100%;
 }
+
+div.code-review-preview {
+    margin-bottom: 10px;
+}
+
+div.code-review-preview:hover {
+    cursor: pointer;
+}
+
+div.code-review-preview .code-review-title {
+    font-size: large;
+    color: black;
+}
+
+div.code-review-preview .code-review-from {
+}
+
+div.code-review-preview .code-review-date {
+}
+
+.code-review-added-file .dynatree-title {
+  color: green;
+}
+
+.code-review-changed-file .dynatree-title {
+  color: darkorange;
+}
+
+.code-review-removed-file .dynatree-title {
+  color: firebrick;
+}
