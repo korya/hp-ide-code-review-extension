@@ -169,72 +169,164 @@ define([
       for (var i = 0; i < commit.files.length; i++) {
 	addFileToTree(repo, commit, commit.files[i], treeRoot);
       }
+    }, function (error) {
+      treeRoot.setLazyNodeStatus(DTNodeStatus_Error);
     });
 
     return $filetree;
   }
 
-  function appendReviewItem(r) {
-    var $r = $('<div id="' + buildReviewItemId(r) + '"></div>');
-    var $commits = $('<div><label>Commits:</label></div>');
-    var $discussion = $('<ul></ul>');
-    var $cmnt = $('<input type="text" name="review-comment"/>');
-    var $btn = $('<button type="button">Respond</button>');
-    var from = r.pending === 'reviewer' ? r.author : r.reviewer;
+  function appendReviewComments($discussion, comments) {
+    for (var j = 0; j < comments.length; j++) {
+      var comment = comments[j];
 
-    $btn.click(function () {
-      var comment = $cmnt.val();
-      reviewService.respondToReview(r, comment);
+      $discussion.append(
+	$('<li><b>' + buildUserName(comment.author) + '</b>: ' +
+	  comment.message + '</li>')
+      );
+    }
+  }
+
+  function showReviewDetails(review) {
+    var $review = $('<div>').attr('id', buildReviewItemId(review) + '-details');
+    var $commits = $('<div>');
+    var $discussion = $('<ul></ul>').addClass('code-review-discussion');
+    var $commentInput = $('<input type="text" name="review-comment"/>');
+    var $commentBtn = $('<button type="button" name="review-comment">Respond</button>');
+    var $approvedBtn = $('<button type="button" name="review-approve">Accept</button>');
+    var $rejectBtn = $('<button type="button" name="review-reject">Reject</button>');
+
+    $commentBtn.click(function () {
+      var comment = $commentInput.val();
+      reviewService.respondToReview(review, comment).done(function () {
+	$commentInput.val('');
+      });
     });
-    $cmnt.keypress(function (event) {
+    $commentInput.keypress(function (event) {
       if (event.keyCode === 13) {
 	event.preventDefault();
-	$btn.trigger("click");
+	$commentBtn.trigger("click");
       }
     });
+    $approvedBtn.click(function () {
+      reviewService.changeReviewState(review, 'approved');
+    });
+    $rejectBtn.click(function () {
+      reviewService.changeReviewState(review, 'rejected');
+    });
 
-    if (!r.comments) r.comments = [];
-    for (var j = 0; j < r.comments.length; j++) {
-      var c = r.comments[j];
-      $discussion.append($('<li><b>' + buildUserName(c.author) + '</b>: ' +
-	    c.message + '</li>'));
+    if (!review.comments) review.comments = [];
+    appendReviewComments($discussion, review.comments);
+
+    $commits.append(showCommitInfo(review, review.commit.sha1));
+
+    $review.append($('<div><label>Title: </label>' + review.title + '</div>'))
+      .append($('<div><label>Author: </label>' + buildUserName(review.author) + '</div>'))
+      .append($('<div><label>Reviewer: </label>' + buildUserName(review.reviewer) + '</div>'))
+      .append($('<div><label>Date: </label>' + review.date + '</div>'))
+      .append($('<div><label>Description: </label><i>' + review.description + '</i></div>'))
+      .append($('<div><label>Commits: </label></div>').append($commits))
+      .append($('<div><label>Discussion: </label></div>').append($discussion))
+      .append($('<div>').append($commentInput).append($commentBtn))
+      .append($('<div>').append($approvedBtn).append($rejectBtn));
+
+    return $review;
+  }
+
+  function addReviewComments(review, comments) {
+    var $rSummary = $('#' + buildReviewItemId(review));
+    var $rDetails = $('#' + buildReviewItemId(review) + '-details');
+
+    if ($rDetails.length) {
+      /* Details tab is shown -- we need to append the comments */
+      var $discussion = $rDetails.find('ul.code-review-discussion');
+
+      appendReviewComments($discussion, comments);
+    } else {
+      /* Details tab is not shown -- notify the user about new comments */
+      $rSummary.addClass('code-review-unread-comments');
     }
 
-    $commits.append(showCommitInfo(r, r.commit.sha1));
+    if (!$rSummary.length) {
+      /* XXX Draw the review? */
+      console.error('got comments for non-existing review:',
+	{review:review, comments:comments});
+      return;
+    }
 
-    $r.append($('<div>Title: ' + r.title + '</div>'))
-      .append($('<div>From: ' + buildUserName(from) + '</div>'))
-      .append($commits)
-      .append($('<div>Description: <i>' + r.description + '</i></div>'))
-      .append($('<div>Date: ' + r.date + '</div>'))
-      .append($discussion)
-      .append($('<div></div>').append($cmnt))
-      .append($('<div></div>').append($btn));
+    $rSummary.data('review', review);
+  }
 
-    var $rPreview = $('<div>').attr('id', 'preview-' + buildReviewItemId(r))
+  function setReviewState($rSummary, $rDetails, review) {
+    if (review.state === 'approved') {
+      $rSummary.addClass('code-review-approved');
+      $rDetails.addClass('code-review-approved');
+    } else {
+      $rSummary.removeClass('code-review-approved');
+      $rDetails.removeClass('code-review-approved');
+    }
+
+    if (review.state === 'rejected') {
+      $rSummary.addClass('code-review-rejected');
+      $rDetails.addClass('code-review-rejected');
+    } else {
+      $rSummary.removeClass('code-review-rejected');
+      $rDetails.removeClass('code-review-rejected');
+    }
+
+    if ($rDetails.length) {
+      /* Details tab is shown -- we need to update the state */
+      if (review.state === 'pending') {
+	$rDetails.find('input[name="review-comment"]').prop('disabled', false).show();
+	$rDetails.find('button[name="review-comment"]').prop('disabled', false).show();
+      } else {
+	$rDetails.find('input[name="review-comment"]').prop('disabled', true).hide();
+	$rDetails.find('button[name="review-comment"]').prop('disabled', true).hide();
+      }
+    }
+  }
+
+  function addReviewItem(r) {
+    var $rSummary = $('<div>').attr('id', buildReviewItemId(r))
       .addClass('code-review-preview');
 
-    $rPreview
-      .append($('<div>Title:' + r.title + '</div>').addClass('code-review-title'))
-      .append($('<div>From: ' + buildUserName(from) + '</div>').addClass('code-review-from'))
-      .append($('<div>Date: ' + r.date + '</div>').addClass('code-review-date'))
-      .appendTo($reviewList);
-    $reviewListEmptyMessage.hide();
+    $rSummary.data('review', r);
 
-    $rPreview.click(function () {
+    $rSummary
+      .append($('<div><label>Title:</label>' + r.title + '</div>').addClass('code-review-title'))
+      .append($('<div><label>Author:</label>' + buildUserName(r.author) + '</div>').addClass('code-review-from'))
+      .append($('<div><label>Date:</label>' + r.date + '</div>').addClass('code-review-date'));
+
+    $rSummary.click(function () {
+      var review = $rSummary.data('review');
+      $rSummary.removeClass('code-review-unread-comments');
       var subPane = _layoutService.createSubPane({
 	pane: 'east',
-	title: r.title,
-	id: 'code-review-' + r._id,
+	title: review.title,
+	id: 'code-review-' + review._id,
 	removable: true,
 	render: function (subPane) {
-	  $(subPane.getDomElement()).append($r);
-	}
+	  var $rDetails = showReviewDetails(review);
+	  setReviewState($(''), $rDetails, review);
+	  $(subPane.getDomElement()).append($rDetails);
+	},
       });
       subPane.select();
     });
 
-    return $r;
+    setReviewState($rSummary, $(''), r);
+
+    $reviewList.append($rSummary);
+    $reviewListEmptyMessage.hide();
+  }
+
+  function updateReviewState(review) {
+    var $rSummary = $('#' + buildReviewItemId(review));
+    var $rDetails = $('#' + buildReviewItemId(review) + '-details');
+
+    setReviewState($rSummary, $rDetails, review);
+
+    $rSummary.data('review', review);
   }
 
   function removeReviewItem(r) {
@@ -251,7 +343,7 @@ define([
   function setReviews(reviews) {
     $reviewList.empty();
     for (var i = 0; i < reviews.length; i++) {
-      appendReviewItem(reviews[i]);
+      addReviewItem(reviews[i]);
     }
     if (!$reviewList.children().length)
       $reviewListEmptyMessage.show();
@@ -408,8 +500,10 @@ define([
     _editorsService = editorsService;
     _layoutService = layoutService;
 
-    eventBus.vent.on('code-review:add', appendReviewItem);
+    eventBus.vent.on('code-review:add', addReviewItem);
     eventBus.vent.on('code-review:rem', removeReviewItem);
+    eventBus.vent.on('code-review:comments-add', addReviewComments);
+    eventBus.vent.on('code-review:state-change', updateReviewState);
   }
 
   return {

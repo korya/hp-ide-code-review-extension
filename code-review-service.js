@@ -39,12 +39,12 @@ define([
     });
   }
 
-  function postPendingStatus(review, newStatus) {
+  function postReviewState(review, newState) {
     return $.ajax({
       type: 'PUT',
-      url: '/pull-requests/' + review._id + '/pending',
+      url: '/pull-requests/' + review._id + '/state',
       contentType: "application/json; charset=utf-8",
-      data: JSON.stringify({ pending: newStatus }),
+      data: JSON.stringify({ state: newState }),
       dataType: "json",
     });
   }
@@ -83,30 +83,24 @@ define([
       message: message,
     };
 
-    /* Reviewer says nothing -- approve. */
-    if (!comment.message && review.pending === 'reviewer') {
-      return postPendingStatus(review, 'approved');
-    } else if (!comment.message) {
+    if (!comment.message) {
       return (new $.Deferred()).reject('empty message').promise();
     }
 
-    return postReviewComment(review, comment).done(function () {
-      var nextStatus = review.pending === 'reviewer' ? 'author' : 'reviewer';
-      return postPendingStatus(review, nextStatus);
-    });
+    return postReviewComment(review, comment);
   }
 
   function getPendingReviews() {
     /* Even when Ajax fails, return a resolved promise objects. */
     var pendingRequests =
-      getReviews({ 'reviewer.email': getMySelf().email, pending: 'reviewer' })
+      getReviews({ 'reviewer.email': getMySelf().email })
       .then(function (res) {
 	return $.when(res);
       }, function (err) {
 	return $.when([]);
       });
     var pendingResponses =
-      getReviews({ 'author.email': getMySelf().email, pending: 'author' })
+      getReviews({ 'author.email': getMySelf().email })
       .then(function (res) {
 	return $.when(res);
       }, function (err) {
@@ -140,7 +134,16 @@ define([
   function getCommitDetails(repo, sha1) {
     return _gitService.commitShow(repo, sha1).then(function (res) {
       return $.when(res);
-    }, function (err) { console.log(err); });
+    }, function (xhr) {
+      var error;
+      if (xhr.responseJSON && xhr.responseJSON.error) {
+	error = xhr.responseJSON.error;
+      } else {
+	error = xhr.responseText;
+      }
+      console.error('error:', xhr, '; e:', error);
+      return $.Deferred().reject(error).promise();
+    });
   }
 
   function getFileRevision(repo, file, revision) {
@@ -164,16 +167,23 @@ define([
 
   function ioConnect(socket) {
     socket.emit('auth', {email: getMySelf().email});
-    socket.on('review-change', function (review) {
-      if (review.pending === 'author' && review.author.email === getMySelf().email) {
-	eventBus.vent.trigger('code-review:add', review);
-	return;
-      }
-      if (review.pending === 'reviewer' && review.reviewer.email === getMySelf().email) {
+
+    socket.on('review-add', function (review) {
+      var myEmail = getMySelf().email;
+      if (review.author.email === myEmail || review.reviewer.email === myEmail) {
 	eventBus.vent.trigger('code-review:add', review);
 	return;
       }
       eventBus.vent.trigger('code-review:rem', review);
+    });
+
+    socket.on('review-comments-add', function (review, comments) {
+      eventBus.vent.trigger('code-review:comments-add', review, comments);
+    });
+
+    socket.on('review-state-change', function (review) {
+      console.log('state-change:', review.state);
+      eventBus.vent.trigger('code-review:state-change', review);
     });
   }
 
@@ -195,5 +205,6 @@ define([
     getCommitList: getCommitList,
     getCommitDetails: getCommitDetails,
     getFileRevision: getFileRevision,
+    changeReviewState: postReviewState,
   };
 });
