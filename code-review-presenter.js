@@ -25,6 +25,71 @@ define([
     return 'code-review-item-' + review.getId();
   }
 
+  function findReviewSummaryElement(review) {
+    return $('#' + buildReviewItemId(review));
+  }
+  function findReviewDetailsElement(review) {
+    return $('#' + buildReviewItemId(review) + '-details');
+  }
+
+  function ReviewListener($review) {
+    this._events = [
+      'review-add-comments',
+      'review-state-changed',
+      'review-remove',
+    ];
+    this._$r = $review;
+    this._init();
+  }
+  ReviewListener.prototype = {
+    _init: function () {
+      this._queues = {};
+      this._cbs = {};
+      for (var i = 0; i < this._events.length; i++) {
+	var e = this._events[i];
+
+	this._queues[e] = [];
+	this._cbs[e] = _.bind(this._onEvent, this, e);
+	this._$r.on(e, this._cbs[e]);
+      }
+    },
+    uninit: function () {
+      for (var i = 0; i < this._events; i++) {
+	this.$r.off(e, this._cbs[e]);
+      }
+      delete this._cbs;
+      delete this._queues;
+    },
+    _onEvent: function () {
+      /* Ignore 2 first arguments
+       *   argument[0] = event name
+       *   argument[1] = jquery event object
+       */
+      var e = arguments[0];
+      var args = Array.prototype.slice.call(arguments, 2);
+      this._queues[e].forEach(function (cb) {
+	cb.apply(null, args);
+      });
+      if (e === 'review-remove')
+	this.uninit();
+    },
+    onCommentsAdd: function (callback) {
+      var e = 'review-add-comments';
+      this._queues[e].push(callback);
+      return this;
+    },
+    onStateChange: function (callback) {
+      var e = 'review-state-changed';
+      this._queues[e].push(callback);
+      return this;
+    },
+    onRemove: function (callback) {
+      var e = 'review-remove';
+      this._queues[e].push(callback);
+      return this;
+    },
+  };
+
   function createDiffEditor(id, repo, commit, file, type) {
     var sha1Abbrev = buildSha1Abbrev(commit.sha1);
     var contentType = { id: "diff/text" };
@@ -251,79 +316,84 @@ define([
     return $review;
   }
 
-  function addReviewComments(review, comments) {
-    var $rSummary = $('#' + buildReviewItemId(review));
-    var $rDetails = $('#' + buildReviewItemId(review) + '-details');
-
-    if ($rDetails.length) {
-      /* Details tab is shown -- we need to append the comments */
-      var $discussion = $rDetails.find('ul.code-review-discussion');
-
-      appendReviewComments($discussion, comments);
-    } else {
-      /* Details tab is not shown -- notify the user about new comments */
-      $rSummary.addClass('code-review-unread-comments');
-    }
-
-    if (!$rSummary.length) {
-      /* XXX Draw the review? */
-      console.error('got comments for non-existing review:',
-	{review:review, comments:comments});
-      return;
-    }
-
-    $rSummary.data('review', review);
-  }
-
-  function setReviewState($rSummary, $rDetails, review) {
+  function setReviewState($review, review) {
     if (review.isApproved()) {
-      $rSummary.addClass('code-review-approved');
-      $rDetails.addClass('code-review-approved');
+      $review.addClass('code-review-approved');
     } else {
-      $rSummary.removeClass('code-review-approved');
-      $rDetails.removeClass('code-review-approved');
+      $review.removeClass('code-review-approved');
     }
 
     if (review.isRejected()) {
-      $rSummary.addClass('code-review-rejected');
-      $rDetails.addClass('code-review-rejected');
+      $review.addClass('code-review-rejected');
     } else {
-      $rSummary.removeClass('code-review-rejected');
-      $rDetails.removeClass('code-review-rejected');
+      $review.removeClass('code-review-rejected');
     }
 
-    if ($rDetails.length) {
-      /* Details tab is shown -- we need to update the state */
-      if (review.isPending()) {
-	$rDetails.find('input[name="review-comment"]').prop('disabled', false).show();
-	$rDetails.find('button[name="review-comment"]').prop('disabled', false).show();
-      } else {
-	$rDetails.find('input[name="review-comment"]').prop('disabled', true).hide();
-	$rDetails.find('button[name="review-comment"]').prop('disabled', true).hide();
-      }
+    /* Details tab is shown -- we need to update the state */
+    if (review.isPending()) {
+      $review.find('input[name="review-comment"]').prop('disabled', false).show();
+      $review.find('button[name="review-comment"]').prop('disabled', false).show();
+    } else {
+      $review.find('input[name="review-comment"]').prop('disabled', true).hide();
+      $review.find('button[name="review-comment"]').prop('disabled', true).hide();
     }
   }
 
   function openReviewSubPane($rSummary) {
     var review = $rSummary.data('review');
-    var id = 'code-review-' + review.getId();
-    var subPane = _layoutService.getSubPane(id);
-
-    $rSummary.removeClass('code-review-unread-comments');
+    var subPaneId = 'code-review-' + review.getId();
+    var subPane = _layoutService.getSubPane(subPaneId);
+    var reviewListener = new ReviewListener($rSummary);
 
     if (!subPane) {
       subPane = _layoutService.createSubPane({
 	pane: 'east',
 	title: review.getTitle(),
-	id: id,
+	id: subPaneId,
 	removable: true,
 	render: function (subPane) {
 	  var $rDetails = showReviewDetails(review);
-	  setReviewState($(''), $rDetails, review);
+	  setReviewState($rDetails, review);
 	  $(subPane.getDomElement()).append($rDetails);
 	},
       });
     }
+
+    function onSubPaneSelected(event) {
+      if (event.subPaneId === subPaneId) {
+	$rSummary.removeClass('code-review-unread-comments');
+      }
+    }
+    function onSubPaneRemoved(event) {
+      if (event.subPaneId === subPaneId) {
+	eventBus.vent.off('after:subPaneSelected', onSubPaneSelected);
+	reviewListener.uninit();
+      }
+    }
+
+    reviewListener
+      .onStateChange(function (review) {
+	var $rDetails = findReviewDetailsElement(review);
+
+	setReviewState($rDetails, review);
+      })
+      .onCommentsAdd(function (review, comments) {
+	var $rDetails = findReviewDetailsElement(review);
+	var $discussion = $rDetails.find('ul.code-review-discussion');
+
+	appendReviewComments($discussion, comments);
+	if ($discussion.is(":visible")) {
+	  $rSummary.removeClass('code-review-unread-comments');
+	}
+      })
+      .onRemove(function (review) {
+	eventBus.vent.off('after:subPaneSelected', onSubPaneSelected);
+	eventBus.vent.off('before:subPaneRemoved', onSubPaneRemoved);
+	_layoutService.removeSubPane(subPaneId);
+      });
+
+    eventBus.vent.on('after:subPaneSelected', onSubPaneSelected);
+    eventBus.vent.once('before:subPaneRemoved', onSubPaneRemoved);
 
     subPane.select();
   }
@@ -350,27 +420,39 @@ define([
       openReviewSubPane($rSummary);
     });
 
-    setReviewState($rSummary, $(''), review);
+    setReviewState($rSummary, review);
 
     $reviewList.append($rSummary);
     $reviewListEmptyMessage.hide();
+
+    (new ReviewListener($rSummary))
+      .onStateChange(function (review) {
+	setReviewState($rSummary, review);
+      })
+      .onCommentsAdd(function (review, comments) {
+	$rSummary.addClass('code-review-unread-comments');
+      });
   }
 
   function updateReviewState(review) {
-    var $rSummary = $('#' + buildReviewItemId(review));
-    var $rDetails = $('#' + buildReviewItemId(review) + '-details');
-
-    setReviewState($rSummary, $rDetails, review);
+    var $rSummary = findReviewSummaryElement(review);
 
     $rSummary.data('review', review);
+    $rSummary.trigger('review-state-changed', [review]);
+  }
+
+  function addReviewComments(review, comments) {
+    var $rSummary = findReviewSummaryElement(review);
+
+    $rSummary.data('review', review);
+    $rSummary.trigger('review-add-comments', [review, comments]);
   }
 
   function removeReviewItem(review) {
-    var $review = $('#' + buildReviewItemId(review));
+    var $review = findReviewSummaryElement(review);
 
-    if (!$review.length) return;
+    $review.trigger('review-remove', [review]);
 
-    _layoutService.removeSubPane('code-review-' + review.getId());
     $review.remove();
     if (!$reviewList.children().length)
       $reviewListEmptyMessage.show();
