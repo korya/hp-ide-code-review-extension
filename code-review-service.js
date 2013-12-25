@@ -78,11 +78,13 @@ define([
     return postReview(new Review(params));
   }
 
-  function respondToReview(review, message) {
+  function respondToReview(review, message, file, line) {
     var comment = {
       sender: getMySelf(),
       date: (new Date).toISOString(),
       message: message,
+      file: file,
+      line: line,
     };
 
     if (!comment.message) {

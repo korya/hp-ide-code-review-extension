@@ -31,6 +31,9 @@ define([
   function findReviewDetailsElement(review) {
     return $('#' + buildReviewItemId(review) + '-details');
   }
+  function getReviewById(reviewId) {
+    return $('#code-review-item-' + reviewId).data('review');
+  }
 
   function ReviewListener($review) {
     this._events = [
@@ -90,7 +93,80 @@ define([
     },
   };
 
-  function createDiffEditor(id, repo, commit, file, type) {
+  function renderCommentTree(review, file, line, reviewListener) {
+    var $holder = $('<div>').addClass('code-review-comment-tree');
+    var $discussion = $('<ul></ul>').addClass('code-review-discussion');
+    var $commentInput = $('<input type="text" name="review-comment"/>');
+    var $commentBtn = $('<button type="button" name="review-comment">Respond</button>');
+
+    $commentBtn.click(function () {
+      var comment = $commentInput.val();
+      reviewService.respondToReview(review, comment, file, line)
+	.done(function () {
+	  $commentInput.val('');
+	});
+    });
+    $commentInput.keypress(function (event) {
+      if (event.keyCode === 13) {
+	event.preventDefault();
+	$commentBtn.trigger("click");
+      }
+    });
+
+    appendReviewComments($discussion, review.getComments(file, line));
+
+    $holder
+      .append($discussion)
+      .append($('<div>').append($commentInput).append($commentBtn));
+
+    setReviewState($holder, review);
+
+    reviewListener
+      .onStateChange(function (review) {
+	setReviewState($holder, review);
+      })
+      .onCommentsAdd(function (review, comments) {
+	comments = _.filter(comments, { file:file, line:line });
+	appendReviewComments($discussion, comments);
+      });
+
+    return $holder;
+  }
+
+  function showCommentTreeDialog(reviewId, file, line) {
+    var review = getReviewById(reviewId);
+    var $rSummary = findReviewSummaryElement(review);
+    var title = 'Comments for ' + file + ':' + line;
+    var reviewListener = new ReviewListener($rSummary);
+
+    var dialog = _dialogService.createDialog(title, {
+      closeOnEscape: true,
+      draggable: true,
+      hide: 500,
+      modal: true,
+      show: 800,
+      width: 600,
+      height: 350,
+    }, [
+      {
+	label: 'Close',
+	handler: function() {
+	  reviewListener.uninit();
+	  dialog.close();
+	}
+      }
+    ], function (dialog) {
+      var $tree = renderCommentTree(review, file, line, reviewListener);
+
+      $tree.appendTo(dialog.getDomElement());
+    });
+
+    reviewListener.onRemove(function (review) {
+      dialog.close();
+    });
+  }
+
+  function createDiffEditor(id, reviewId, repo, commit, file, type) {
     var sha1Abbrev = buildSha1Abbrev(commit.sha1);
     var contentType = { id: "diff/text" };
     var title = sha1Abbrev + ':' + file.path;
@@ -120,20 +196,22 @@ define([
     $.when.apply(this, contents)
       .then(function (oldContent, newContent) {
 	editor.setContent([oldContent, newContent]);
-	commentAnnotations.addToEditor({}, editor);
+	commentAnnotations.addToEditor(editor, function (line) {
+	  showCommentTreeDialog(reviewId, file.path, line);
+	});
       }, function (err) {
 	console.error('failed to load', id, ':', err);
 	editor.setContent([err, '']);
       });
   }
 
-  function openDiffEditor(repo, commit, file, type) {
+  function openDiffEditor(reviewId, repo, commit, file, type) {
     var id = type + '@' + commit.sha1 + ':' + file.path;
 
     if (_editorsService.getEditor(id)) {
       return _editorsService.setActiveEditor(id);
     }
-    return createDiffEditor(id, repo, commit, file, type);
+    return createDiffEditor(id, reviewId, repo, commit, file, type);
   }
 
   /* Taken from project-tree code */
@@ -168,7 +246,7 @@ define([
     }
   }
 
-  function addFileToTree(repo, commit, file, tree) {
+  function addFileToTree(reviewId, commit, file, tree) {
     var splitpath = file.path.replace(/^\/|\/$/g, '').split('/');
     var i;
 
@@ -191,22 +269,25 @@ define([
       key: file.path,
       tooltip: getFileTooltip(file),
       addClass: getFileTypeClass(file.path) + '-icon ' + getActionClass(file.action),
-      repo: repo,
+      reviewId: reviewId,
       commit: commit,
       file: file,
     });
   }
 
   function onNodeDblClick(node) {
-    var repo = node.data.repo;
+    var reviewId = node.data.reviewId;
+    var review = getReviewById(reviewId);
+    var repo = review.getRepository().id;
     var commit = node.data.commit;
     var file = node.data.file;
 
     console.log('git diff ' + commit.sha1 + '~ ' + commit.sha1 + ' ' + file.path);
-    openDiffEditor(repo, commit, file, 'twoWay');
+    openDiffEditor(reviewId, repo, commit, file, 'twoWay');
   }
 
   function showCommitInfo(review, sha1) {
+    var reviewId = review.getId();
     var repo = review.getRepository().id;
     var $filetree = $('<div>').attr('id', sha1 + '-file-tree');
     var treeRoot;
@@ -239,7 +320,7 @@ define([
       ].join('\n');
       treeRoot.setLazyNodeStatus(DTNodeStatus_Ok);
       for (var i = 0; i < commit.files.length; i++) {
-	addFileToTree(repo, commit, commit.files[i], treeRoot);
+	addFileToTree(reviewId, commit, commit.files[i], treeRoot);
       }
     }, function (error) {
       treeRoot.setLazyNodeStatus(DTNodeStatus_Error);

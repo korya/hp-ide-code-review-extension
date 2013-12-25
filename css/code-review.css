@@ -73,6 +73,13 @@ div.code-review-preview .code-review-date {
   background-color: #FFAAAA;
 }
 
+.code-review-comment-tree {
+  position: relative;
+  top: 0px;
+  left: 0px;
+  width: 100%;
+  min-height: 100%;
+}
 button[name*="review-approve"] {
   position: relative;
   width: 45%;

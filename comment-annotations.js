@@ -63,10 +63,19 @@ define([
     }
   }
 
+  function addOnClickHandler(ruler, onClickHandler) {
+    addRulerOnClickHandler(ruler, function (lineIndex, e) {
+      var ruler = this;
+      var annotation;
+      if (lineIndex === undefined) return;
+      onClickHandler.call(null, lineIndex + 1, annotation);
+    });
+  }
+
   function isInlineCompareView(view) {
     return view.hasOwnProperty('_editor');
   }
-  function addToInlineCompareView(view) {
+  function addToInlineCompareView(view, onClickHandler) {
     /* inline compare widget -- there is only one editor, but
      *   - it has 2 line number
      *   - it has an annotation ruler, but it's unvisible by default
@@ -80,19 +89,19 @@ define([
 
     if (annotationRuler) {
       annotationRuler.addAnnotationType(ANNOTATION_COMMENT);
-      addRulerOnClickHandler(annotationRuler, showCommentTree);
+      addOnClickHandler(annotationRuler, onClickHandler);
       view._editor.setAnnotationRulerVisible(true);
     }
 
     // XXX Need to distinguish old and new line number rulers
-//     addRulerOnClickHandler(view._rulerOrigin, showCommentTree);
-    addRulerOnClickHandler(view._rulerNew, showCommentTree);
+    //     addOnClickHandler(view._rulerOrigin, onClickHandler);
+    addOnClickHandler(view._rulerNew, onClickHandler);
   }
 
   function isTwoWayCompareView(view) {
     return view.hasOwnProperty('_editors');
   }
-  function addToTwoWayCompareView(view) {
+  function addToTwoWayCompareView(view, onClickHandler) {
     /* twoWay compare widget -- there are 2 editors:
      *
      *  +-+---------------+----------------+-+
@@ -117,7 +126,7 @@ define([
        *     such that comment annotation is visible
        */
       annotationRuler.addAnnotationType(ANNOTATION_COMMENT);
-      addRulerOnClickHandler(annotationRuler, showCommentTree);
+      addOnClickHandler(annotationRuler, onClickHandler);
     }
 
     /* CompareView editors have a custom line number ruler */
@@ -125,19 +134,19 @@ define([
       return r instanceof mCompareRulers.LineNumberCompareRuler;
     });
     if (lineNumberRuler) {
-      addRulerOnClickHandler(lineNumberRuler, showCommentTree);
+      addOnClickHandler(lineNumberRuler, onClickHandler);
     }
 
 //     view._overviewRuler.addAnnotationType(ANNOTATION_COMMENT);
   }
 
-  function addToEditor(review, compareEditor) {
+  function addToEditor(compareEditor, onClickHandler) {
     var view = compareEditor.getCompareView();
 
     if (isInlineCompareView(view)) {
-      addToInlineCompareView(view);
+      addToInlineCompareView(view, onClickHandler);
     } else if (isTwoWayCompareView(view)) {
-      addToTwoWayCompareView(view);
+      addToTwoWayCompareView(view, onClickHandler);
     } else {
       console.error('Failed to add comments annotation to compare editor:',
 	  compareEditor);
