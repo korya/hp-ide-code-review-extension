@@ -1,9 +1,10 @@
 define([
   'scripts/core/event-bus',
   './code-review-service',
+  './comment-annotations',
   /* Assume dynatree was already loaded by project-tree */
   'css!./css/code-review.css',
-], function (eventBus, reviewService) {
+], function (eventBus, reviewService, commentAnnotations) {
   'use strict';
 
   var _dialogService, _editorsService, _layoutService;
@@ -54,6 +55,7 @@ define([
     $.when.apply(this, contents)
       .then(function (oldContent, newContent) {
 	editor.setContent([oldContent, newContent]);
+	commentAnnotations.addToEditor({}, editor);
       }, function (err) {
 	console.error('failed to load', id, ':', err);
 	editor.setContent([err, '']);
@@ -527,6 +529,8 @@ define([
       order: 100,
       render: function () { return subPaneRender; }
     });
+
+    commentAnnotations.registerType();
   }
 
   function run(dialogService, editorsService, layoutService) {
