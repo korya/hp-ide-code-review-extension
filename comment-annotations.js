@@ -6,7 +6,7 @@ define([
 
   var ANNOTATION_COMMENT = 'code-review.annotation.comment';
 
-  function registerType() {
+  function registerAnnotationType() {
     var styleClass = 'comment';
     var properties = {
       title: 'Code review comment annotation',
@@ -22,13 +22,6 @@ define([
       },
     };
 
-    console.log('register:', {
-      mAnnotations:mAnnotations,
-      AnnotationType:mAnnotations.AnnotationType,
-      registerType:mAnnotations.AnnotationType.registerType,
-      type:ANNOTATION_COMMENT,
-      properties:properties
-    });
     mAnnotations.AnnotationType.registerType(ANNOTATION_COMMENT, properties);
   }
 
@@ -167,7 +160,7 @@ define([
    */
 
   return {
-    registerType: registerType,
+    registerAnnotationType: registerAnnotationType,
     addToEditor: addToEditor,
   };
 });

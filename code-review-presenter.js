@@ -612,7 +612,7 @@ define([
       render: function () { return subPaneRender; }
     });
 
-    commentAnnotations.registerType();
+    commentAnnotations.registerAnnotationType();
   }
 
   function run(dialogService, editorsService, layoutService) {
