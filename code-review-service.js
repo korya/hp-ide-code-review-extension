@@ -2,7 +2,8 @@ define([
   'bower_components/socket.io-client/dist/socket.io.min.js',
   'scripts/core/user',
   'scripts/core/event-bus',
-], function (io, userService, eventBus) {
+  './review.js',
+], function (io, userService, eventBus, Review) {
   'use strict';
 
   var _gitService,
@@ -32,7 +33,7 @@ define([
   function postReviewComment(review, comment) {
     return $.ajax({
       type: 'POST',
-      url: '/pull-requests/' + review._id + '/comments',
+      url: '/pull-requests/' + review.getId() + '/comments',
       contentType: "application/json; charset=utf-8",
       data: JSON.stringify(comment),
       dataType: "json",
@@ -42,7 +43,7 @@ define([
   function postReviewState(review, newState) {
     return $.ajax({
       type: 'PUT',
-      url: '/pull-requests/' + review._id + '/state',
+      url: '/pull-requests/' + review.getId() + '/state',
       contentType: "application/json; charset=utf-8",
       data: JSON.stringify({ state: newState }),
       dataType: "json",
@@ -51,8 +52,8 @@ define([
 
   function getUserInfo(user) {
     return {
-      fullName: user.fullName,
-      email: user.email,
+      name: user.fullName,
+      id: user.email,
     }
   }
 
@@ -61,25 +62,26 @@ define([
   }
 
   function sendReviewRequest(title, description, reviewer, commit) {
-    var review = {
+    var params = {
       author: getMySelf(),
-      reviewer: getUserInfo(reviewer),
-      title: title,
-      description: description,
-      repo: _projectsService.getActiveProject().id,
-      commit: {
+      reviewer: reviewer,
+      baseCommit: {
 	sha1: commit.sha1,
       },
-      date: (new Date).toUTCString(),
-    }
+      repository: {
+	id: _projectsService.getActiveProject().id,
+      },
+      title: title,
+      description: description,
+    };
 
-    return postReview(review);
+    return postReview(new Review(params));
   }
 
   function respondToReview(review, message) {
     var comment = {
-      author: getMySelf(),
-      date: (new Date).toUTCString(),
+      sender: getMySelf(),
+      date: (new Date).toISOString(),
       message: message,
     };
 
@@ -91,18 +93,23 @@ define([
   }
 
   function getPendingReviews() {
+    function toReviews(objects) {
+      return _.map(objects, function (o) {
+	return new Review(o);
+      });
+    }
     /* Even when Ajax fails, return a resolved promise objects. */
     var pendingRequests =
-      getReviews({ 'reviewer.email': getMySelf().email })
+      getReviews({ 'reviewer.id': getMySelf().id })
       .then(function (res) {
-	return $.when(res);
+	return $.when(toReviews(res));
       }, function (err) {
 	return $.when([]);
       });
     var pendingResponses =
-      getReviews({ 'author.email': getMySelf().email })
+      getReviews({ 'author.id': getMySelf().id })
       .then(function (res) {
-	return $.when(res);
+	return $.when(toReviews(res));
       }, function (err) {
 	return $.when([]);
       });
@@ -114,8 +121,8 @@ define([
   }
 
   function getReviewers() {
-    return $.getJSON('/users').then(function (res) {
-      return $.when(res);
+    return $.getJSON('/users').then(function (reviewers) {
+      return $.when(_.map(reviewers, getUserInfo));
     });
   }
 
@@ -166,23 +173,28 @@ define([
   }
 
   function ioConnect(socket) {
-    socket.emit('auth', {email: getMySelf().email});
+    socket.emit('auth', {id: getMySelf().id});
 
-    socket.on('review-add', function (review) {
-      var myEmail = getMySelf().email;
-      if (review.author.email === myEmail || review.reviewer.email === myEmail) {
+    socket.on('review-add', function (reviewParams) {
+      var review = new Review(reviewParams);
+
+      if (review.isInvolved(getMySelf().id)) {
 	eventBus.vent.trigger('code-review:add', review);
 	return;
       }
+
       eventBus.vent.trigger('code-review:rem', review);
     });
 
-    socket.on('review-comments-add', function (review, comments) {
+    socket.on('review-comments-add', function (reviewParams, comments) {
+      var review = new Review(reviewParams);
+
       eventBus.vent.trigger('code-review:comments-add', review, comments);
     });
 
-    socket.on('review-state-change', function (review) {
-      console.log('state-change:', review.state);
+    socket.on('review-state-change', function (reviewParams) {
+      var review = new Review(reviewParams);
+
       eventBus.vent.trigger('code-review:state-change', review);
     });
   }

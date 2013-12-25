@@ -8,10 +8,9 @@ define([
 
   var _dialogService, _editorsService, _layoutService;
   var $holder, $incoming, $reviewList, $reviewListEmptyMessage;
-  var reviewItemMap = {};
 
-  function buildUserName(r) {
-    return r.fullName + ' &lt' + r.email + '&gt';
+  function buildUserName(user) {
+    return user.name + ' &lt' + user.id + '&gt';
   }
   function buildSha1Abbrev(sha1) {
     return sha1.substr(0, 7); // Just truncate it
@@ -21,8 +20,8 @@ define([
     if (message.length > maxLen) message = message.substr(0, maxLen-3) + '...';
     return message;
   }
-  function buildReviewItemId(r) {
-    return 'code-review-item-' + r._id;
+  function buildReviewItemId(review) {
+    return 'code-review-item-' + review.getId();
   }
 
   function createDiffEditor(id, repo, commit, file, type) {
@@ -140,8 +139,8 @@ define([
     openDiffEditor(repo, commit, file, 'twoWay');
   }
 
-  function showCommitInfo(r, sha1) {
-    var repo = r.repo;
+  function showCommitInfo(review, sha1) {
+    var repo = review.getRepository().id;
     var $filetree = $('<div>').attr('id', sha1 + '-file-tree');
     var treeRoot;
 
@@ -187,7 +186,7 @@ define([
       var comment = comments[j];
 
       $discussion.append(
-	$('<li><b>' + buildUserName(comment.author) + '</b>: ' +
+	$('<li><b>' + buildUserName(comment.sender) + '</b>: ' +
 	  comment.message + '</li>')
       );
     }
@@ -212,21 +211,20 @@ define([
 	$commentBtn.trigger("click");
       }
     });
-    if (!review.comments) review.comments = [];
-    appendReviewComments($discussion, review.comments);
+    appendReviewComments($discussion, review.getComments());
 
-    $commits.append(showCommitInfo(review, review.commit.sha1));
+    $commits.append(showCommitInfo(review, review.getBaseCommit().sha1));
 
-    $review.append($('<div><label>Title: </label>' + review.title + '</div>'))
-      .append($('<div><label>Author: </label>' + buildUserName(review.author) + '</div>'))
-      .append($('<div><label>Reviewer: </label>' + buildUserName(review.reviewer) + '</div>'))
-      .append($('<div><label>Date: </label>' + review.date + '</div>'))
-      .append($('<div><label>Description: </label><i>' + review.description + '</i></div>'))
+    $review.append($('<div><label>Title: </label>' + review.getTitle() + '</div>'))
+      .append($('<div><label>Author: </label>' + buildUserName(review.getAuthor()) + '</div>'))
+      .append($('<div><label>Reviewer: </label>' + buildUserName(review.getReviewer()) + '</div>'))
+      .append($('<div><label>Date: </label>' + review.getCreationDate() + '</div>'))
+      .append($('<div><label>Description: </label><i>' + review.getDescription() + '</i></div>'))
       .append($('<div><label>Commits: </label></div>').append($commits))
       .append($('<div><label>Discussion: </label></div>').append($discussion))
       .append($('<div>').append($commentInput).append($commentBtn));
 
-    if (review.reviewer.email === reviewService.getMySelf().email) {
+    if (review.isReviewer(reviewService.getMySelf().id)) {
       var $approvedBtn = $('<button type="button" name="review-approve">Approve</button>');
       var $rejectBtn = $('<button type="button" name="review-reject">Reject</button>');
       var $undoBtn = $('<button type="button" name="review-undo">Undo</button>');
@@ -276,7 +274,7 @@ define([
   }
 
   function setReviewState($rSummary, $rDetails, review) {
-    if (review.state === 'approved') {
+    if (review.isApproved()) {
       $rSummary.addClass('code-review-approved');
       $rDetails.addClass('code-review-approved');
     } else {
@@ -284,7 +282,7 @@ define([
       $rDetails.removeClass('code-review-approved');
     }
 
-    if (review.state === 'rejected') {
+    if (review.isRejected()) {
       $rSummary.addClass('code-review-rejected');
       $rDetails.addClass('code-review-rejected');
     } else {
@@ -294,7 +292,7 @@ define([
 
     if ($rDetails.length) {
       /* Details tab is shown -- we need to update the state */
-      if (review.state === 'pending') {
+      if (review.isPending()) {
 	$rDetails.find('input[name="review-comment"]').prop('disabled', false).show();
 	$rDetails.find('button[name="review-comment"]').prop('disabled', false).show();
       } else {
@@ -306,7 +304,7 @@ define([
 
   function openReviewSubPane($rSummary) {
     var review = $rSummary.data('review');
-    var id = 'code-review-' + review._id;
+    var id = 'code-review-' + review.getId();
     var subPane = _layoutService.getSubPane(id);
 
     $rSummary.removeClass('code-review-unread-comments');
@@ -314,7 +312,7 @@ define([
     if (!subPane) {
       subPane = _layoutService.createSubPane({
 	pane: 'east',
-	title: review.title,
+	title: review.getTitle(),
 	id: id,
 	removable: true,
 	render: function (subPane) {
@@ -328,22 +326,29 @@ define([
     subPane.select();
   }
 
-  function addReviewItem(r) {
-    var $rSummary = $('<div>').attr('id', buildReviewItemId(r))
+  function addReviewItem(review) {
+    var $rSummary = $('<div>').attr('id', buildReviewItemId(review))
       .addClass('code-review-preview');
 
-    $rSummary.data('review', r);
+    $rSummary.data('review', review);
 
     $rSummary
-      .append($('<div><label>Title:</label>' + r.title + '</div>').addClass('code-review-title'))
-      .append($('<div><label>Author:</label>' + buildUserName(r.author) + '</div>').addClass('code-review-from'))
-      .append($('<div><label>Date:</label>' + r.date + '</div>').addClass('code-review-date'));
+      .append(
+	$('<div><label>Title:</label>' + review.getTitle() + '</div>')
+	  .addClass('code-review-title'))
+      .append(
+	$('<div><label>Author:</label>' + buildUserName(review.getAuthor()) + '</div>')
+	  .addClass('code-review-from'))
+      .append(
+	$('<div><label>Date:</label>' + review.getCreationDate() + '</div>')
+	  .addClass('code-review-date')
+      );
 
     $rSummary.click(function () {
       openReviewSubPane($rSummary);
     });
 
-    setReviewState($rSummary, $(''), r);
+    setReviewState($rSummary, $(''), review);
 
     $reviewList.append($rSummary);
     $reviewListEmptyMessage.hide();
@@ -358,13 +363,13 @@ define([
     $rSummary.data('review', review);
   }
 
-  function removeReviewItem(r) {
-    var $r = $('#' + buildReviewItemId(r));
+  function removeReviewItem(review) {
+    var $review = $('#' + buildReviewItemId(review));
 
-    if (!$r.length) return;
+    if (!$review.length) return;
 
-    _layoutService.removeSubPane('code-review-' + r._id);
-    $r.remove();
+    _layoutService.removeSubPane('code-review-' + review.getId());
+    $review.remove();
     if (!$reviewList.children().length)
       $reviewListEmptyMessage.show();
   }
