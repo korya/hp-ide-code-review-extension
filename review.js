@@ -34,14 +34,14 @@ define([
    * @name ReviewComment
    * @class A <code>ReviewComment</code> stores comment data
    *
-   * @property {String} id 
+   * @property {String} id  //XXX
    * @property {String} message
-   * @property {String} sender
+   * @property {ReviewUser} sender
    * @property {String} date
    * @property {String} file
    * @property {Integer} line
-   * @property {String} parentId
-   * @property {String} state One of 'approved' or 'rejected'
+   * @property {String} parentId //XXX
+   * @property {String} state One of 'approved' or 'rejected' //XXX
    */
 
   function getUserInfo(user) {
