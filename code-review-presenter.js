@@ -2,9 +2,10 @@ define([
   'scripts/core/event-bus',
   './code-review-service',
   './comment-annotations',
+  './review-event',
   /* Assume dynatree was already loaded by project-tree */
   'css!./css/code-review.css',
-], function (eventBus, reviewService, commentAnnotations) {
+], function (eventBus, reviewService, commentAnnotations, ReviewEvent) {
   'use strict';
 
   var _dialogService, _editorsService, _layoutService;
@@ -34,64 +35,6 @@ define([
   function getReviewById(reviewId) {
     return $('#code-review-item-' + reviewId).data('review');
   }
-
-  function ReviewListener($review) {
-    this._events = [
-      'review-add-comments',
-      'review-state-changed',
-      'review-remove',
-    ];
-    this._$r = $review;
-    this._init();
-  }
-  ReviewListener.prototype = {
-    _init: function () {
-      this._queues = {};
-      this._cbs = {};
-      for (var i = 0; i < this._events.length; i++) {
-	var e = this._events[i];
-
-	this._queues[e] = [];
-	this._cbs[e] = _.bind(this._onEvent, this, e);
-	this._$r.on(e, this._cbs[e]);
-      }
-    },
-    uninit: function () {
-      for (var i = 0; i < this._events; i++) {
-	this.$r.off(e, this._cbs[e]);
-      }
-      delete this._cbs;
-      delete this._queues;
-    },
-    _onEvent: function () {
-      /* Ignore 2 first arguments
-       *   argument[0] = event name
-       *   argument[1] = jquery event object
-       */
-      var e = arguments[0];
-      var args = Array.prototype.slice.call(arguments, 2);
-      this._queues[e].forEach(function (cb) {
-	cb.apply(null, args);
-      });
-      if (e === 'review-remove')
-	this.uninit();
-    },
-    onCommentsAdd: function (callback) {
-      var e = 'review-add-comments';
-      this._queues[e].push(callback);
-      return this;
-    },
-    onStateChange: function (callback) {
-      var e = 'review-state-changed';
-      this._queues[e].push(callback);
-      return this;
-    },
-    onRemove: function (callback) {
-      var e = 'review-remove';
-      this._queues[e].push(callback);
-      return this;
-    },
-  };
 
   function renderCommentTree(review, file, line, reviewListener) {
     var $holder = $('<div>').addClass('code-review-comment-tree');
@@ -137,7 +80,7 @@ define([
     var review = getReviewById(reviewId);
     var $rSummary = findReviewSummaryElement(review);
     var title = 'Comments for ' + file + ':' + line;
-    var reviewListener = new ReviewListener($rSummary);
+    var reviewListener = new ReviewEvent($rSummary);
 
     var dialog = _dialogService.createDialog(title, {
       closeOnEscape: true,
@@ -424,7 +367,7 @@ define([
     var review = $rSummary.data('review');
     var subPaneId = 'code-review-' + review.getId();
     var subPane = _layoutService.getSubPane(subPaneId);
-    var reviewListener = new ReviewListener($rSummary);
+    var reviewListener = new ReviewEvent($rSummary);
 
     if (!subPane) {
       subPane = _layoutService.createSubPane({
@@ -506,7 +449,7 @@ define([
     $reviewList.append($rSummary);
     $reviewListEmptyMessage.hide();
 
-    (new ReviewListener($rSummary))
+    (new ReviewEvent($rSummary))
       .onStateChange(function (review) {
 	setReviewState($rSummary, review);
       })
@@ -519,20 +462,20 @@ define([
     var $rSummary = findReviewSummaryElement(review);
 
     $rSummary.data('review', review);
-    $rSummary.trigger('review-state-changed', [review]);
+    $rSummary.trigger(ReviewEvent.events.STATE_CHANGED_EVENT, [review]);
   }
 
   function addReviewComments(review, comments) {
     var $rSummary = findReviewSummaryElement(review);
 
     $rSummary.data('review', review);
-    $rSummary.trigger('review-add-comments', [review, comments]);
+    $rSummary.trigger(ReviewEvent.events.ADD_COMMENTS_EVENT, [review, comments]);
   }
 
   function removeReviewItem(review) {
     var $review = findReviewSummaryElement(review);
 
-    $review.trigger('review-remove', [review]);
+    $review.trigger(ReviewEvent.events.REMOVE_EVENT, [review]);
 
     $review.remove();
     if (!$reviewList.children().length)
