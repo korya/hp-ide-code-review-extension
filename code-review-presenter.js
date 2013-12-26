@@ -5,7 +5,7 @@ define([
   './review-event',
   /* Assume dynatree was already loaded by project-tree */
   'css!./css/code-review.css',
-], function (eventBus, reviewService, commentAnnotations, ReviewEvent) {
+], function (eventBus, reviewService, CommentAnnotator, ReviewEvent) {
   'use strict';
 
   var _dialogService, _editorsService, _layoutService;
@@ -133,19 +133,37 @@ define([
       (file.action === 'added') ? $.when('') : reviewService.getFileRevision(repo, file.path, commit.sha1 + '~'),
       (file.action === 'removed') ? $.when('') : reviewService.getFileRevision(repo, file.path, commit.sha1),
     ];
+    var annotator = new CommentAnnotator();
 
     console.log('open editor', {id:id, type:contentType, data:'', title:title, metaData:metaData});
     var editor = _editorsService.createNewEditor(id, contentType, '', title, metaData);
     $.when.apply(this, contents)
       .then(function (oldContent, newContent) {
+	var review = getReviewById(reviewId);
+	var $rSummary = findReviewSummaryElement(review);
+
 	editor.setContent([oldContent, newContent]);
-	commentAnnotations.addToEditor(editor, function (line) {
+
+	annotator.init(editor, function (line) {
 	  showCommentTreeDialog(reviewId, file.path, line);
+	});
+	annotator.addComments(review.getComments(file.path));
+
+	(new ReviewEvent($rSummary)).onCommentsAdd(function (review, comments) {
+	  annotator.addComments(comments);
 	});
       }, function (err) {
 	console.error('failed to load', id, ':', err);
 	editor.setContent([err, '']);
       });
+
+    eventBus.vent.once("before:editorClosed", function (event) {
+      if (event.editor === editor) {
+	annotator.uninit();
+      }
+    });
+
+    return editor;
   }
 
   function openDiffEditor(reviewId, repo, commit, file, type) {
@@ -636,7 +654,7 @@ define([
       render: function () { return subPaneRender; }
     });
 
-    commentAnnotations.registerAnnotationType();
+    CommentAnnotator.registerAnnotationType();
   }
 
   function run(dialogService, editorsService, layoutService) {
