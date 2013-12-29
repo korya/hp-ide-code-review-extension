@@ -102,6 +102,10 @@ define([
     return this.creationDate;
   };
 
+  Review.prototype.getLastUpdateDate = function () {
+    return this.lastUpdatedDate;
+  };
+
   Review.prototype.getBaseCommit = function () {
     return this.baseCommit;
   };
