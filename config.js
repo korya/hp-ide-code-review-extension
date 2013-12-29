@@ -6,7 +6,7 @@ define({
   moduleLoaders:[
     {
       id: 'code-review-service',
-      main: 'code-review-service',
+      main: 'service/code-review',
       dependencies: [
 	'projects-service',
 	'git-service',
@@ -14,7 +14,7 @@ define({
     },
     {
       id: 'code-review-ui',
-      main: 'code-review-presenter',
+      main: 'ui/code-review',
       dependencies: [
 	'code-review-service',
 	'ide-layout',
