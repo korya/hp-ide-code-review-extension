@@ -201,17 +201,7 @@ define([
     });
   }
 
-  function run(gitService, projectsService) {
-    var socket = io.connect('/pull-requests');
-
-    socket.on('connect', function () { ioConnect(socket); });
-
-    _gitService = gitService;
-    _projectsService = projectsService;
-  }
-
-  return {
-    run: run,
+  var codeReviewService = {
     sendReviewRequest: sendReviewRequest,
     respondToReview: respondToReview,
     getPendingReviews: getPendingReviews,
@@ -221,5 +211,27 @@ define([
     getFileRevision: getFileRevision,
     changeReviewState: postReviewState,
     getMySelf: getMySelf,
+  };
+
+  function runService(gitService, projectsService) {
+    var socket = io.connect('/pull-requests');
+
+    socket.on('connect', function () { ioConnect(socket); });
+
+    _gitService = gitService;
+    _projectsService = projectsService;
+  }
+
+  return {
+    run : [
+      'git-service',
+      'projects-service',
+      runService
+    ],
+    factorys: {
+      'code-review-service': function () {
+	return codeReviewService;
+      },
+    },
   };
 });

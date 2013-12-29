@@ -5,13 +5,23 @@ define({
   description: 'Code review management module',
   moduleLoaders:[
     {
-      id: 'code-review',
-      main: 'code-review',
+      id: 'code-review-service',
+      main: 'code-review-service',
       dependencies: [
-	'orion-compare',
 	'projects-service',
 	'git-service',
       ]
-    }
+    },
+    {
+      id: 'code-review-ui',
+      main: 'code-review-presenter',
+      dependencies: [
+	'code-review-service',
+	'ide-layout',
+	'editors',
+	'dialog',
+	'orion-compare',
+      ]
+    },
   ]
 });

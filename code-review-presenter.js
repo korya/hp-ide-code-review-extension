@@ -1,14 +1,13 @@
 define([
   'scripts/core/event-bus',
-  './code-review-service',
   './comment-annotations',
   './review-event',
   /* Assume dynatree was already loaded by project-tree */
   'css!./css/code-review.css',
-], function (eventBus, reviewService, CommentAnnotator, ReviewEvent) {
+], function (eventBus, CommentAnnotator, ReviewEvent) {
   'use strict';
 
-  var _dialogService, _editorsService, _layoutService;
+  var _codeReviewService, _dialogService, _editorsService, _layoutService;
   var $holder, $incoming, $reviewList, $reviewListEmptyMessage;
 
   function buildUserName(user) {
@@ -44,7 +43,7 @@ define([
 
     $commentBtn.click(function () {
       var comment = $commentInput.val();
-      reviewService.respondToReview(review, comment, file, line)
+      _codeReviewService.respondToReview(review, comment, file, line)
 	.done(function () {
 	  $commentInput.val('');
 	});
@@ -130,8 +129,10 @@ define([
       compare: compare,
     };
     var contents = [
-      (file.action === 'added') ? $.when('') : reviewService.getFileRevision(repo, file.path, commit.sha1 + '~'),
-      (file.action === 'removed') ? $.when('') : reviewService.getFileRevision(repo, file.path, commit.sha1),
+      (file.action === 'added') ? $.when('') :
+        _codeReviewService.getFileRevision(repo, file.path, commit.sha1 + '~'),
+      (file.action === 'removed') ? $.when('') :
+	_codeReviewService.getFileRevision(repo, file.path, commit.sha1),
     ];
     var annotator = new CommentAnnotator();
 
@@ -269,7 +270,7 @@ define([
     });
 
     treeRoot.setLazyNodeStatus(DTNodeStatus_Loading);
-    reviewService.getCommitDetails(repo, sha1).then(function (commit) {
+    _codeReviewService.getCommitDetails(repo, sha1).then(function (commit) {
       treeRoot.data.title = buildCommitName(commit, 40);
       treeRoot.data.tooltip = [
         'SHA1: ' + commit.sha1,
@@ -310,7 +311,7 @@ define([
 
     $commentBtn.click(function () {
       var comment = $commentInput.val();
-      reviewService.respondToReview(review, comment).done(function () {
+      _codeReviewService.respondToReview(review, comment).done(function () {
 	$commentInput.val('');
       });
     });
@@ -333,19 +334,19 @@ define([
       .append($('<div><label>Discussion: </label></div>').append($discussion))
       .append($('<div>').append($commentInput).append($commentBtn));
 
-    if (review.isReviewer(reviewService.getMySelf().id)) {
+    if (review.isReviewer(_codeReviewService.getMySelf().id)) {
       var $approvedBtn = $('<button type="button" name="review-approve">Approve</button>');
       var $rejectBtn = $('<button type="button" name="review-reject">Reject</button>');
       var $undoBtn = $('<button type="button" name="review-undo">Undo</button>');
 
       $approvedBtn.click(function () {
-	reviewService.changeReviewState(review, 'approved');
+	_codeReviewService.changeReviewState(review, 'approved');
       });
       $rejectBtn.click(function () {
-	reviewService.changeReviewState(review, 'rejected');
+	_codeReviewService.changeReviewState(review, 'rejected');
       });
       $undoBtn.click(function () {
-	reviewService.changeReviewState(review, 'pending');
+	_codeReviewService.changeReviewState(review, 'pending');
       });
 
       $('<div>')
@@ -534,7 +535,7 @@ define([
 	var reviewer = reviewers[parseInt($reviewer.val())];
 
 	$error.hide();
-	reviewService.sendReviewRequest(title, desc, reviewer, commit)
+	_codeReviewService.sendReviewRequest(title, desc, reviewer, commit)
 	  .fail(function (err) { $error.text(JSON.stringify(err)).show(); })
 	  .done(function () { dialog.close(); });
       });
@@ -632,20 +633,17 @@ define([
     var $create = $('<div id="code-review-create"/>');
     var $sendButton = $('<button type="button">Send Pull Request</button>');
     $sendButton.click(function () {
-      createReviewDialog(reviewService.getCommitList(), reviewService.getReviewers());
+      createReviewDialog(_codeReviewService.getCommitList(),
+	_codeReviewService.getReviewers());
     });
     $create.append($sendButton).appendTo($holder);
 
     $incoming = $('<div id="code-review-incoming"/>').appendTo($holder);
     $reviewList = $('<div class="code-review-list"></div>').appendTo($incoming);
     $reviewListEmptyMessage = $('<p>No pending reviews</div>').appendTo($incoming);
-
-    reviewService.getPendingReviews().then(function (res) {
-      setReviews(res);
-    });
   }
 
-  function config(layoutServiceProvider) {
+  function configModule(layoutServiceProvider) {
     layoutServiceProvider.registerSubPane({
       pane: 'east',
       title: 'Pull Request',
@@ -657,7 +655,8 @@ define([
     CommentAnnotator.registerAnnotationType();
   }
 
-  function run(dialogService, editorsService, layoutService) {
+  function runModule(codeReviewService, dialogService, editorsService, layoutService) {
+    _codeReviewService = codeReviewService;
     _dialogService = dialogService;
     _editorsService = editorsService;
     _layoutService = layoutService;
@@ -666,10 +665,23 @@ define([
     eventBus.vent.on('code-review:rem', removeReviewItem);
     eventBus.vent.on('code-review:comments-add', addReviewComments);
     eventBus.vent.on('code-review:state-change', updateReviewState);
+
+    _codeReviewService.getPendingReviews().then(function (res) {
+      setReviews(res);
+    });
   }
 
   return {
-    config: config,
-    run: run,
-  }
+    config : [
+      'ide-layoutServiceProvider',
+      configModule
+    ],
+    run : [
+      'code-review-service',
+      'dialog-service',
+      'editors-service',
+      'ide-layoutService',
+      runModule
+    ],
+  };
 });
