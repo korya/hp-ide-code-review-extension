@@ -1,0 +1,45 @@
+<div class='codeReviewDash dashContainer' data-ng-controller='code-review-dashboard'>
+
+  <div class='dashTitle'>Code Review Dashboard</div>
+
+  <div class='dashHeader'>
+    <div class="sortComp">
+      <select class='dashHeaderSortSelect'
+	data-ng-options='mode.name for mode in sortModes'
+	data-ng-model='selectedSortMode' />
+
+      <input id='dashboardFilterInput' type='text' class='filterInput'
+	data-ng-model='filterPattern' />
+    </div>
+
+<!--     <button class='dashHeaderNewButton' data-ng-click='newProject()'>+ New App</button> -->
+  </div>
+
+  <div class='dashBody'>
+    <div data-ng-repeat='review in reviews | orderBy:selectedSortMode.field | filter:filterPattern'>
+      <div class='itemBox'>
+
+	<div class='boxHeader'>
+	  <span type='text' class=boxTitle'>{{review.title}} </span>
+	</div>
+
+	<div class='boxCustomArea'>
+	  <div class='boxData'>
+	    <div> Author: {{review.author}} </div>
+	    <div> Reviewers: {{review.reviewers}} </div>
+	    <div> Created: {{review.creationDate}} </div>
+	    <div> Last modified: {{review.lastUpdatedDate}} </div>
+	    <div> State: {{review.state}} </div>
+	  </div>
+	</div>
+
+	<div class='boxFooter'>
+	  <button class='reviewFooterButton'
+	    data-ng-click='openReview(review)'>Open</button>
+	</div>
+
+      </div>
+    </div>
+  </div>
+
+</div>

@@ -23,5 +23,13 @@ define({
 	'orion-compare',
       ]
     },
+    {
+      id: 'code-review-dashboard',
+      main: 'dashboard/code-review',
+      dependencies: [
+	'mega-menu',
+	'code-review-service',
+      ]
+    },
   ]
 });
