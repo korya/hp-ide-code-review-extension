@@ -104,6 +104,7 @@ define([
       extModule.directive('codeReviewDashboard', function () {
 	return {
 	  restrict: 'E',
+	  replace: true,
 	  templateUrl: 'extensions/hpsw/code-review/1.00/dashboard/dashboard.html'
 	};
       });
