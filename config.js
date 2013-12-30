@@ -21,6 +21,7 @@ define({
 	'editors',
 	'dialog',
 	'orion-compare',
+	'notification-service',
       ]
     },
     {
