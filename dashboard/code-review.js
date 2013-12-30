@@ -9,10 +9,19 @@ define([
     this.title = review.getTitle();
     this.description = review.getDescription();
     this.state = review.getState();
+    this.approved = review.isApproved();
+    this.rejected = review.isRejected();
     this.author = review.getAuthor();
     this.reviewers = [review.getReviewer()];
     this.creationDate = review.getCreationDate();
     this.lastUpdatedDate = review.getLastUpdateDate();
+  }
+
+  function cmpReviewState(review) {
+    /* Order: pending < rejected < approved */
+    if (review.approved) return 1;
+    if (review.rejected) return 0;
+    /* pending */        return -1;
   }
 
   function toLocalReview(review) {
@@ -48,9 +57,9 @@ define([
 
     $scope.sortModes = [
       { name: 'Creation Date', field: '-creationDate' },
-      { name: 'Last Update Date', field: '-lastUpdatedDate' },
-      { name: 'Author', field: '+author.name' },
-      { name: 'State', field: 'state' },
+      { name: 'Last Update Date', field: ['-lastUpdatedDate', '-creationDate'] },
+      { name: 'Author', field: ['+author.name', '-lastUpdatedDate'] },
+      { name: 'State', field: [cmpReviewState, '-lastUpdatedDate'] },
     ];
     $scope.selectedSortMode = $scope.sortModes[0];
 
