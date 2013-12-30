@@ -30,8 +30,8 @@ define([
 
   function dashboardConfig(megaMenuServiceProvider) {
     megaMenuServiceProvider.registerPage({
-      id: 'codeReviewDashboardPage',
-      title: 'Code Review Dashboard',
+      id: 'codeReviewDashboard',
+      title: 'Review Dashboard',
       order: 0,
       render: function () {
 	return function (domContainer) {
