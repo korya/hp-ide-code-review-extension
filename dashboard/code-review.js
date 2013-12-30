@@ -1,6 +1,6 @@
 define([
   'scripts/core/event-bus',
-  'css!./css/dashboard',
+  'css!./less/dashboard',
 ], function(eventBus) {
   'use strict';
 
