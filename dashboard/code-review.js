@@ -36,10 +36,14 @@ define([
   function dashboardController($scope, codeReviewService, megaMenuService) {
     $scope.reviews = [];
     codeReviewService.getPendingReviews().then(function (reviews) {
-      $scope.reviews = _.map(reviews, toLocalReview);
+      $scope.$apply(function () {
+	$scope.reviews = _.map(reviews, toLocalReview);
+      });
     }, function (error) {
-      $scope.error = 'Failed to load reviews...';
       console.error('Failed to load reviews:', {error:error});
+      $scope.$apply(function () {
+	$scope.error = 'Failed to load reviews...';
+      });
     });
 
     $scope.sortModes = [
