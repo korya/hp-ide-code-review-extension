@@ -15,6 +15,7 @@ define([
     this.reviewers = [review.getReviewer()];
     this.creationDate = review.getCreationDate();
     this.lastUpdatedDate = review.getLastUpdateDate();
+    this.original = review;
   }
 
   function cmpReviewState(review) {
@@ -42,7 +43,9 @@ define([
   }
   dashboardConfig.$inject = ['mega-menuServiceProvider'];
 
-  function dashboardController($scope, codeReviewService, megaMenuService) {
+  function dashboardController($scope, codeReviewService, megaMenuService,
+    codeReviewPage)
+  {
     $scope.reviews = [];
     codeReviewService.getPendingReviews().then(function (reviews) {
       $scope.$apply(function () {
@@ -88,12 +91,14 @@ define([
       });
     });
 
-//     $scope.openProject = function(newProject) {
-//       projectsService.activateProject(newProject.originalProject);
-//       megaMenuService.selectPage('ide-page');
-//     };
+    $scope.openReview = function(review) {
+      codeReviewPage.openReview(review.original);
+      megaMenuService.selectPage('codeReviewPage');
+    };
   }
-  dashboardController.$inject = ['$scope', 'code-review-service', 'mega-menuService'];
+  dashboardController.$inject = ['$scope', 'code-review-service',
+    'mega-menuService', 'code-review-page'
+  ];
 
   return {
     init: function (extModule) {
