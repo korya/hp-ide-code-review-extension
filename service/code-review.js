@@ -2,7 +2,7 @@ define([
   'bower_components/socket.io-client/dist/socket.io.min.js',
   'scripts/core/user',
   'scripts/core/event-bus',
-  './review.js',
+  '../review.js',
 ], function (io, userService, eventBus, Review) {
   'use strict';
 
