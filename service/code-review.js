@@ -61,7 +61,7 @@ define([
     return getUserInfo(userService.getCache());
   }
 
-  function sendReviewRequest(title, description, reviewer, commit) {
+  function createNewReviewRequest(title, description, reviewer, commit) {
     var params = {
       author: getMySelf(),
       reviewer: reviewer,
@@ -78,7 +78,7 @@ define([
     return postReview(new Review(params));
   }
 
-  function respondToReview(review, message, file, line) {
+  function commentReview(review, message, file, line) {
     var comment = {
       sender: getMySelf(),
       date: (new Date).toISOString(),
@@ -202,8 +202,8 @@ define([
   }
 
   var codeReviewService = {
-    sendReviewRequest: sendReviewRequest,
-    respondToReview: respondToReview,
+    createNewReviewRequest: createNewReviewRequest,
+    commentReview: commentReview,
     getPendingReviews: getPendingReviews,
     getReviewers: getReviewers,
     getCommitList: getCommitList,

@@ -43,7 +43,7 @@ define([
 
     $commentBtn.click(function () {
       var comment = $commentInput.val();
-      _codeReviewService.respondToReview(review, comment, file, line)
+      _codeReviewService.commentReview(review, comment, file, line)
 	.done(function () {
 	  $commentInput.val('');
 	});
@@ -311,7 +311,7 @@ define([
 
     $commentBtn.click(function () {
       var comment = $commentInput.val();
-      _codeReviewService.respondToReview(review, comment).done(function () {
+      _codeReviewService.commentReview(review, comment).done(function () {
 	$commentInput.val('');
       });
     });
@@ -535,7 +535,7 @@ define([
 	var reviewer = reviewers[parseInt($reviewer.val())];
 
 	$error.hide();
-	_codeReviewService.sendReviewRequest(title, desc, reviewer, commit)
+	_codeReviewService.createNewReviewRequest(title, desc, reviewer, commit)
 	  .fail(function (err) { $error.text(JSON.stringify(err)).show(); })
 	  .done(function () { dialog.close(); });
       });
