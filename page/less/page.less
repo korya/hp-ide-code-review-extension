@@ -53,6 +53,31 @@
     overflow-y: auto;
   }
 
+  .details {
+
+    div + div {
+      margin: 4px;
+    }
+
+    .title {
+      font-size: 18px;
+      color: darkblue;
+      margin-bottom: 5px;
+    }
+
+    .state.rejected span {
+      color: red;
+      font-weight: bold;
+    }
+    .state.approved span {
+      color: green;
+    }
+
+    .description .empty {
+      font-style: italic;
+    }
+  }
+
   .discussion {
     overflow-x: hidden;
     overflow-y: auto;

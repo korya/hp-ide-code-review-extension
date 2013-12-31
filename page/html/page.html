@@ -3,6 +3,58 @@
   <div class='container'>
 
     <div class='left'>
+
+      <div class='noReview' data-ng-show='review === undefined'>
+      </div>
+
+      <div class='details' data-ng-show='review !== undefined'>
+	<div class='title'><span>{{review.title}}</span></div>
+	<div class='state'
+	  data-ng-class='{approved:review.isApproved(), rejected:review.isRejected()}'>
+	  <label>State:</label>
+	  <span>{{review.state}}</span>
+	</div>
+	<div class='author'>
+	  <label>Author:</label>
+	  <span>{{review.author.name}}</span>
+	</div>
+	<div class='reviewer'>
+	  <label>Reviewer:</label>
+	  <span>{{review.reviewer.name}}</span>
+	</div>
+	<div class='description'>
+	  <label>Description:</label>
+	  <span data-ng-show='!review.description' class='empty'>
+	    No description
+	  </span>
+	  <span>{{review.description}}</span>
+	</div>
+	<div class='creationDate'>
+	  <label>Creation Date:</label>
+	  <span>{{review.creationDate}}</span>
+	</div>
+	<div class='lastUpdatedDate'>
+	  <label>Last Update Date:</label>
+	  <span>{{review.lastUpdatedDate}}</span>
+	</div>
+	<div class='repository'>
+	  <div data-ng-show='review.repository.id'>
+	    <label>Repository ID:</label>
+	    <span>{{review.repository.id}}</span>
+	  </div>
+	  <div data-ng-show='!review.repository.id'>
+	    <label>Repository Remote:</label>
+	    <span>{{review.repository.remote}}</span>
+	  </div>
+	</div>
+	<div class='commit'>
+	  <label>Commits:</label>
+	  <div class='filetree-placeholder'>
+	    <!-- place holder for dynatrees -->
+	  </div>
+	</div>
+      </div>
+
     </div>
 
     <div class='right'>
