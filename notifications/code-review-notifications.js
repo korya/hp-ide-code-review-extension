@@ -56,7 +56,7 @@ define([
       notificationService.add({
 	id: buildNotificationID(['state-change', review.getId()]),
 	image: REVIEW_IMG,
-	message: 'State of review "' + review.getTitle() + '" ' + action,
+	message: 'Review "' + review.getTitle() + '" ' + action,
 	onClick: function () {
 	  console.log('review notification was clicked', {review:review});
 	  // XXX Open the review
