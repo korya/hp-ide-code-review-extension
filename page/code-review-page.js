@@ -31,6 +31,20 @@ define([
     '$scope', 'code-review-service', 'mega-menuService',
     function ($scope, codeReviewService, megaMenuService) {
       $scope.review = undefined;
+
+      $scope.$watch('review', function (newVal, oldVal, $scope) {
+	if (!newVal) {
+	  $scope.discussion = [];
+	  return;
+	}
+
+	$scope.discussion = _.map(newVal.getComments(), function (c) {
+	  var comment = _.clone(c);
+
+	  comment.prettyDate = (new Date(comment.date)).toGMTString();
+	  return comment;
+	});
+      });
     }
   ];
 
@@ -38,16 +52,14 @@ define([
     openReview: function (review) {
       var $scope = getPageScope();
 
-      $scope.apply(function () {
-	$scope.review = _.clone(review);
-      });
+      $scope.review = review;
+      if (!$scope.$$phase) { $scope.$apply(); }
     },
     closeReview: function () {
       var $scope = getPageScope();
 
-      $scope.apply(function () {
-	$scope.review = undefined;
-      });
+      $scope.review = undefined;
+      if (!$scope.$$phase) { $scope.$apply(); }
     },
   };
 
@@ -77,7 +89,9 @@ define([
       });
     },
     factorys: {
-      'code-review-page': codeReviewPage,
+      'code-review-page': function () {
+	return codeReviewPage;
+      }
     },
   };
 });

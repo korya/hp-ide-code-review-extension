@@ -6,6 +6,22 @@
     </div>
 
     <div class='right'>
+
+      <div class='discussion'>
+	<div data-ng-show='discussion.length === 0'>
+	  <span>No comments</span>
+	</div>
+	<div class='comment' data-ng-repeat='c in discussion | orderBy:"-date"'>
+	  <div class='message'>
+	    <span class='sender'>{{c.sender.name}}:</span>
+	    <span>{{c.message}}</span>
+	  </div>
+	  <div class='date'>{{c.prettyDate}}</div>
+	  <div class='location'>{{c.file}}:{{c.line}}</div>
+	  <div class='state'>{{c.state}}</div>
+	</div>
+      </div>
+      `
     </div>
 
     <div class='center'>
