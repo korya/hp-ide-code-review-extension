@@ -32,5 +32,13 @@ define({
 	'code-review-service',
       ]
     },
+    {
+      id: 'code-review-page',
+      main: 'page/code-review-page',
+      dependencies: [
+	'mega-menu',
+	'code-review-service',
+      ]
+    },
   ]
 });
