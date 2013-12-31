@@ -7,8 +7,15 @@ define([
 ], function (eventBus, CommentAnnotator, ReviewEvent) {
   'use strict';
 
-  var _codeReviewService, _dialogService, _editorsService, _layoutService;
+  var _codeReviewService, _dialogService, _editorsService, _layoutService,
+      _gitService, _projectsService;
   var $holder, $incoming, $reviewList, $reviewListEmptyMessage;
+
+  function getProjectRepo(project) {
+    return {
+      id: project.id,
+    };
+  }
 
   function buildUserName(user) {
     return user.name + ' &lt' + user.id + '&gt';
@@ -130,9 +137,9 @@ define([
     };
     var contents = [
       (file.action === 'added') ? $.when('') :
-        _codeReviewService.getFileRevision(repo, file.path, commit.sha1 + '~'),
+        _gitService.showFile(repo, file.path, commit.sha1 + '~'),
       (file.action === 'removed') ? $.when('') :
-	_codeReviewService.getFileRevision(repo, file.path, commit.sha1),
+	_gitService.showFile(repo, file.path, commit.sha1),
     ];
     var annotator = new CommentAnnotator();
 
@@ -270,7 +277,7 @@ define([
     });
 
     treeRoot.setLazyNodeStatus(DTNodeStatus_Loading);
-    _codeReviewService.getCommitDetails(repo, sha1).then(function (commit) {
+    _gitService.commitShow(repo, sha1).then(function (commit) {
       treeRoot.data.title = buildCommitName(commit, 40);
       treeRoot.data.tooltip = [
         'SHA1: ' + commit.sha1,
@@ -533,9 +540,10 @@ define([
 	var desc = $description.val();
 	var commit = commits[parseInt($commit.val())];
 	var reviewer = reviewers[parseInt($reviewer.val())];
+	var repo = getProjectRepo(_projectsService.getActiveProject());
 
 	$error.hide();
-	_codeReviewService.createNewReviewRequest(title, desc, reviewer, commit)
+	_codeReviewService.createNewReviewRequest(repo, title, desc, reviewer, commit)
 	  .fail(function (err) { $error.text(JSON.stringify(err)).show(); })
 	  .done(function () { dialog.close(); });
       });
@@ -624,6 +632,16 @@ define([
     return dialog;
   }
 
+  function getProjectCommitList() {
+    var project = _projectsService.getActiveProject();
+
+    if (!project) {
+      return (new $.Deferred()).reject('no active project').promise();
+    }
+
+    return _gitService.log(getProjectRepo(project).id);
+  }
+
   function subPaneRender(subPane) {
     var $panel = $(subPane.getDomElement());
 
@@ -633,7 +651,7 @@ define([
     var $create = $('<div id="code-review-create"/>');
     var $sendButton = $('<button type="button">Send Pull Request</button>');
     $sendButton.click(function () {
-      createReviewDialog(_codeReviewService.getCommitList(),
+      createReviewDialog(getProjectCommitList(),
 	_codeReviewService.getReviewers());
     });
     $create.append($sendButton).appendTo($holder);
@@ -656,12 +674,14 @@ define([
   }
 
   function runModule(codeReviewService, dialogService, editorsService,
-    layoutService, notificationService)
+    layoutService, gitService, projectsService)
   {
     _codeReviewService = codeReviewService;
     _dialogService = dialogService;
     _editorsService = editorsService;
     _layoutService = layoutService;
+    _gitService = gitService;
+    _projectsService = projectsService;
 
     eventBus.vent.on('code-review:add', addReviewItem);
     eventBus.vent.on('code-review:rem', removeReviewItem);
@@ -683,7 +703,8 @@ define([
       'dialog-service',
       'editors-service',
       'ide-layoutService',
-      'notification-service',
+      'git-service',
+      'projects-service',
       runModule
     ],
   };

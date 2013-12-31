@@ -6,8 +6,7 @@ define([
 ], function (io, userService, eventBus, Review) {
   'use strict';
 
-  var _gitService,
-      _projectsService;
+  var _projectsService;
 
   function getReviews(query) {
     var url = '/pull-requests' + (query ? '?' + $.param(query) : '');
@@ -61,7 +60,7 @@ define([
     return getUserInfo(userService.getCache());
   }
 
-  function createNewReviewRequest(title, description, reviewer, commit) {
+  function createNewReviewRequest(repo, title, description, reviewer, commit) {
     var params = {
       author: getMySelf(),
       reviewer: reviewer,
@@ -69,7 +68,8 @@ define([
 	sha1: commit.sha1,
       },
       repository: {
-	id: _projectsService.getActiveProject().id,
+	id: repo.id,
+	remote: repo.remote,
       },
       title: title,
       description: description,
@@ -128,52 +128,6 @@ define([
     });
   }
 
-  function getCommitList() {
-    var project = _projectsService.getActiveProject();
-
-    if (!project) {
-      return (new $.Deferred()).reject('no active project').promise();
-    }
-
-    return _gitService.log(project.id).then(function (res) {
-      return $.when(res);
-    });
-  }
-
-  function getCommitDetails(repo, sha1) {
-    return _gitService.commitShow(repo, sha1).then(function (res) {
-      return $.when(res);
-    }, function (xhr) {
-      var error;
-      if (xhr.responseJSON && xhr.responseJSON.error) {
-	error = xhr.responseJSON.error;
-      } else {
-	error = xhr.responseText;
-      }
-      console.error('error:', xhr, '; e:', error);
-      return $.Deferred().reject(error).promise();
-    });
-  }
-
-  function getFileRevision(repo, file, revision) {
-    return _gitService.showFile(repo, file, revision).then(function (res) {
-      return $.when(res);
-    }, function (xhr) {
-      var error = '';
-      if (xhr.responseJSON.error) {
-	error += xhr.responseJSON.error.error;
-	error += '\n\n';
-	error += xhr.responseJSON.error.command;
-	error += '\n\n';
-	error += xhr.responseJSON.error.stackAtCall;
-      } else {
-	error += xhr.responseText;
-      }
-      console.error('error:', xhr, '; e:', error);
-      return $.Deferred().reject(error).promise();
-    });
-  }
-
   function ioConnect(socket) {
     socket.emit('auth', {id: getMySelf().id});
 
@@ -206,25 +160,20 @@ define([
     commentReview: commentReview,
     getPendingReviews: getPendingReviews,
     getReviewers: getReviewers,
-    getCommitList: getCommitList,
-    getCommitDetails: getCommitDetails,
-    getFileRevision: getFileRevision,
     changeReviewState: postReviewState,
     getMySelf: getMySelf,
   };
 
-  function runService(gitService, projectsService) {
+  function runService(projectsService) {
     var socket = io.connect('/pull-requests');
 
     socket.on('connect', function () { ioConnect(socket); });
 
-    _gitService = gitService;
     _projectsService = projectsService;
   }
 
   return {
     run : [
-      'git-service',
       'projects-service',
       runService
     ],
