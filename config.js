@@ -25,6 +25,13 @@ define({
       ]
     },
     {
+      id: 'code-review-notifications',
+      main: 'notifications/code-review-notifications',
+      dependencies: [
+	'notification-service',
+      ]
+    },
+    {
       id: 'code-review-dashboard',
       main: 'dashboard/code-review',
       dependencies: [

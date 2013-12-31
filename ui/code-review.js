@@ -655,68 +655,6 @@ define([
     CommentAnnotator.registerAnnotationType();
   }
 
-  function addNotificationHooks(notificationService) {
-    var reviewImage = 'extensions/hpsw/code-review/1.00/ui/images/comment-talk-multiple-50.png';
-    var baseId = 'code-review',
-	addId = [baseId, 'add', ''].join('.'),
-	remId = [baseId, 'rem', ''].join('.'),
-	commentsAddId = [baseId, 'comments-add', ''].join('.'),
-	stateChangeId = [baseId, 'state-change', ''].join('.');
-
-    eventBus.vent.on('code-review:add', function (review) {
-      notificationService.add({
-	id: addId + review.getId(),
-	image: reviewImage,
-	message: 'New code review request "' + review.getTitle() + '"',
-	onClick: function () {
-	  console.log('review notification was clicked', {review:review});
-	},
-      });
-    });
-
-    eventBus.vent.on('code-review:rem', function (review) {
-      notificationService.add({
-	id: remId + review.getId(),
-	image: reviewImage,
-	message: 'Code review request was removed "' + review.getTitle() + '"',
-	onClick: function () {
-	  console.log('review notification was clicked', {review:review});
-	},
-      });
-    });
-
-    eventBus.vent.on('code-review:comments-add', function (review) {
-      notificationService.add({
-	id: commentsAddId + review.getId(),
-	image: reviewImage,
-	message: 'New comments for review "' + review.getTitle() + '"',
-	onClick: function () {
-	  console.log('review notification was clicked', {review:review});
-	},
-      });
-    });
-
-    eventBus.vent.on('code-review:state-change', function (review) {
-      var action;
-
-      if (review.isApproved())
-	action = 'was approved';
-      else if (review.isRejected())
-	action = 'was rejected';
-      else
-	action = 'was moved back to pending';
-
-      notificationService.add({
-	id: stateChangeId + review.getId(),
-	image: reviewImage,
-	message: 'State of review "' + review.getTitle() + '" ' + action,
-	onClick: function () {
-	  console.log('review notification was clicked', {review:review});
-	},
-      });
-    });
-  }
-
   function runModule(codeReviewService, dialogService, editorsService,
     layoutService, notificationService)
   {
@@ -729,8 +667,6 @@ define([
     eventBus.vent.on('code-review:rem', removeReviewItem);
     eventBus.vent.on('code-review:comments-add', addReviewComments);
     eventBus.vent.on('code-review:state-change', updateReviewState);
-
-    addNotificationHooks(notificationService);
 
     _codeReviewService.getPendingReviews().then(function (res) {
       setReviews(res);
