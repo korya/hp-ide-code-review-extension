@@ -175,6 +175,11 @@ define([
     function ($scope, codeReviewService, megaMenuService, gitService) {
       _gitService = gitService;
 
+      $scope.removeFile = function (file) {
+	var index = $scope.openFiles.indexOf(file);
+	if (index !== -1) $scope.openFiles.splice(index, 1);
+      }
+
       $scope.review = undefined;
 
       $scope.$watch('review', function (review, oldVal, $scope) {

@@ -80,7 +80,7 @@
 
       <tabbable>
 	<div data-ng-repeat='file in openFiles'>
-	  <tab title='{{file.title}}'>
+	  <tab title='{{file.title}}' data-on-remove='removeFile(file)'>
 	    <div class='editor'>
 	      Here comes an editor of {{file.title}}
 	    </div>
