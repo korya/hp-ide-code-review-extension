@@ -22,10 +22,7 @@ define([
   }
 
   function getPageScope() {
-    var $scope = angular.element($('.codeReviewPage')).scope();
-
-    console.error('scope:', {s:$scope});
-    return $scope;
+    return angular.element($('.codeReviewPage')).scope();
   }
 
   function showDiffTab(file) {
