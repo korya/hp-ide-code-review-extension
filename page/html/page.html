@@ -77,6 +77,20 @@
     </pane>
 
     <pane title='center'>
+
+      <tabbable>
+	<div data-ng-repeat='file in openFiles'>
+	  <tab title='{{file.title}}'>
+	    <div class='editor'>
+	      Here comes an editor of {{file.title}}
+	    </div>
+	    <div class='footer'>
+	      Here comes a footer of {{file.title}}
+	    </div>
+	  </tab>
+	</div>
+      </tabbable>
+
     </pane>
 
   </div>

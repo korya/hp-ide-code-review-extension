@@ -28,6 +28,14 @@ define([
     return $scope;
   }
 
+  function showDiffTab(file) {
+    var $scope = getPageScope();
+
+    $scope.$apply(function () {
+      $scope.openFiles.push({title: file});
+    });
+  }
+
   function onNodeDblClick(node) {
     var $scope = getPageScope();
     var review = $scope.review;
@@ -35,8 +43,11 @@ define([
     var commit = node.data.commit;
     var file = node.data.file;
 
-    console.log('git diff ' + commit.sha1 + '~ ' + commit.sha1 + ' ' + file.path);
-//     openDiffEditor(reviewId, repo, commit, file, 'twoWay');
+    /* We don't want to be in dynatree context -- it catches our exceptions */
+    setTimeout(function () {
+      console.log('git diff ' + commit.sha1 + '~ ' + commit.sha1 + ' ' + file.path);
+      showDiffTab(file.path);
+    });
   }
 
   /* Taken from project-tree code */
@@ -168,10 +179,12 @@ define([
 
       $scope.$watch('review', function (review, oldVal, $scope) {
 	if (!review) {
+	  $scope.openFiles = [];
 	  $scope.discussion = [];
 	  return;
 	}
 
+	$scope.openFiles = [];
 	$scope.discussion = _.map(review.getComments(), function (c) {
 	  var comment = _.clone(c);
 
