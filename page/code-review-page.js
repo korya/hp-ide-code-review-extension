@@ -1,8 +1,9 @@
 define([
   'scripts/core/event-bus',
   '../review.js',
+  './layout.js',
   'css!./less/page',
-], function (eventBus, Review) {
+], function (eventBus, Review, layout) {
   'use strict';
 
   var _gitService;
@@ -226,6 +227,8 @@ define([
 	  });
 	};
       });
+
+      layout.init(extModule);
     },
     factorys: {
       'code-review-page': function () {
