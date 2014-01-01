@@ -73,23 +73,29 @@
 	  <div class='state'>{{c.state}}</div>
 	</div>
       </div>
-      `
+
     </pane>
 
     <pane title='center'>
 
-      <tabbable>
-	<div data-ng-repeat='file in openFiles'>
-	  <tab title='{{file.title}}' data-on-remove='removeFile(file)'>
-	    <div class='editor'>
-	      Here comes an editor of {{file.title}}
-	    </div>
-	    <div class='footer'>
-	      Here comes a footer of {{file.title}}
-	    </div>
-	  </tab>
-	</div>
-      </tabbable>
+      <tabset>
+	 <tab ng-repeat="file in openFiles"
+	   disabled="file.disabled"
+	   active="file.active">
+
+	   <tab-heading>
+	     {{file.title}}
+	     <a ng-click="removeFile(file)" href=''>x</a>
+	   </tab-heading>
+
+	     <div class='editor'>
+	       Here comes an editor of {{file.title}}
+	     </div>
+	     <div class='footer'>
+	       Here comes a footer of {{file.title}}
+	     </div>
+	 </tab>
+       </tabset>
 
     </pane>
 
