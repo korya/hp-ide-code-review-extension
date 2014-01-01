@@ -25,25 +25,31 @@ define([
     return angular.element($('.codeReviewPage')).scope();
   }
 
-  function showDiffTab(file) {
+  function showDiffTab(commit, filepath, type) {
     var $scope = getPageScope();
+    var id = type + '@' + commit.sha1 + ':' + filepath;
+    var file = _.find($scope.openFiles, { id: id})
+
+    if (file) {
+      $scope.$apply(function () {
+	file.active = true;
+      });
+      return;
+    }
 
     $scope.$apply(function () {
-      $scope.openFiles.push({title: file});
+      console.log('git diff ' + commit.sha1 + '~ ' + commit.sha1 + ' ' + filepath);
+      $scope.openFiles.push({id:id, title: filepath, active:true});
     });
   }
 
   function onNodeDblClick(node) {
-    var $scope = getPageScope();
-    var review = $scope.review;
-    var repo = review.getRepository().id;
     var commit = node.data.commit;
     var file = node.data.file;
 
     /* We don't want to be in dynatree context -- it catches our exceptions */
     setTimeout(function () {
-      console.log('git diff ' + commit.sha1 + '~ ' + commit.sha1 + ' ' + file.path);
-      showDiffTab(file.path);
+      showDiffTab(commit, file.path, 'twoWay');
     });
   }
 
@@ -79,7 +85,7 @@ define([
     }
   }
 
-  function addFileToTree(reviewId, commit, file, tree) {
+  function addFileToTree(commit, file, tree) {
     var splitpath = file.path.replace(/^\/|\/$/g, '').split('/');
     var i;
 
@@ -102,14 +108,12 @@ define([
       key: file.path,
       tooltip: getFileTooltip(file),
       addClass: getFileTypeClass(file.path) + '-icon ' + getActionClass(file.action),
-      reviewId: reviewId,
       commit: commit,
       file: file,
     });
   }
 
   function showCommitInfo(review, sha1) {
-    var reviewId = review.getId();
     var repo = review.getRepository().id;
     var $filetree = $('<div>');
     var treeRoot;
@@ -142,7 +146,7 @@ define([
       ].join('\n');
       treeRoot.setLazyNodeStatus(DTNodeStatus_Ok);
       for (var i = 0; i < commit.files.length; i++) {
-	addFileToTree(reviewId, commit, commit.files[i], treeRoot);
+	addFileToTree(commit, commit.files[i], treeRoot);
       }
     }, function (error) {
       treeRoot.setLazyNodeStatus(DTNodeStatus_Error);
