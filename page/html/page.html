@@ -84,16 +84,18 @@
 	   active="diffTab.active">
 
 	   <tab-heading>
-	     {{diffTab.title}}
+	     {{diffTab.editor.title}}
 	     <a ng-click="removeDiffTab(diffTab)" href=''>x</a>
 	   </tab-heading>
 
+	   <compare-editor data-params='diffTab.editor'
+	     data-old-file='diffTab.oldFile' data-new-file='diffTab.newFile'
+	     data-git-fetch
+	     >
+	   </compare-editor>
 
-	   <div class='editor'>
-	     Here comes an editor of {{diffTab.title}}
-	   </div>
 	   <div class='footer'>
-	     Here comes a footer of {{diffTab.title}}
+	     Here comes a footer of {{diffTab.editor.title}}
 	   </div>
 	 </tab>
        </tabset>

@@ -2,8 +2,9 @@ define([
   'scripts/core/event-bus',
   '../review.js',
   './layout.js',
+  './compare-edior-ang',
   'css!./less/page',
-], function (eventBus, Review, layout) {
+], function (eventBus, Review, layout, compareEditorAng) {
   'use strict';
 
   var _gitService;
@@ -25,10 +26,10 @@ define([
     return angular.element($('.codeReviewPage')).scope();
   }
 
-  function showDiffTab(commit, filepath, type) {
+  function showDiffTab(commit, file, type) {
     var $scope = getPageScope();
-    var id = type + '@' + commit.sha1 + ':' + filepath;
-    var diffTab = _.find($scope.diffTabs, { id: id})
+    var id = type + '@' + commit.sha1 + ':' + file.path;
+    var diffTab = _.find($scope.diffTabs, { editor: {id: id} })
 
     if (diffTab) {
       $scope.$apply(function () {
@@ -38,12 +39,39 @@ define([
     }
 
     $scope.$apply(function () {
+      var repo = $scope.review.getRepository().id;
+      var sha1Abbrev = buildSha1Abbrev(commit.sha1);
+
+      function defineFileParams(repo, revision, filepath, name, content) {
+	var params = {
+	  name: name,
+	  content: content,
+	};
+
+	if (content === undefined) {
+	  params.git = {
+	    repository: repo,
+	    revision: revision,
+	    path: filepath,
+	  };
+	}
+	return params;
+      }
+
       diffTab = {
-	id: id,
 	active: true,
-	title: filepath,
+	editor: {
+	  id: id,
+	  title: sha1Abbrev + ' ' + file.path,
+	  type: type,
+	},
+	oldFile: defineFileParams(repo, commit.sha1 + '~', file.path,
+	  sha1Abbrev + '~' + ':' + file.path,
+	  (file.action === 'added') ? '' : undefined),
+	newFile: defineFileParams(repo, commit.sha1, file.path,
+	  sha1Abbrev + ':' + file.path,
+	  (file.action === 'removed') ? '' : undefined),
       };
-      console.log('git diff ' + commit.sha1 + '~ ' + commit.sha1 + ' ' + filepath);
       $scope.diffTabs.push(diffTab);
     });
   }
@@ -54,7 +82,7 @@ define([
 
     /* We don't want to be in dynatree context -- it catches our exceptions */
     setTimeout(function () {
-      showDiffTab(commit, file.path, 'twoWay');
+      showDiffTab(commit, file, 'twoWay');
     });
   }
 
@@ -253,6 +281,7 @@ define([
       });
 
       layout.init(extModule);
+      compareEditorAng.init(extModule);
     },
     factorys: {
       'code-review-page': function () {
