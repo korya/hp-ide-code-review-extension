@@ -59,27 +59,26 @@
 
     <pane title='right'>
 
-      <div class='discussionFilter'>
-  	<select ng-model="commentThread"
-	  data-ng-options="threadLabel(t) group by t.file for t in threads">
-	  <option value="">-- all comments --</option>
+      <div class='threadFilter'>
+	<select
+	  data-ng-model="thread.filter"
+	  data-ng-options="f.toString() group by f.file for f in thread.filters">
 	</select>
-	<label>{{commentThread}}</label>
       </div>
 
       <div class='comments'>
-	<div data-ng-show='comments.length === 0'>
-	  <span>No comments</span>
-	</div>
 	<div class='comment'
-	  data-ng-repeat='c in comments | filter:commentThread | orderBy:"-date"'>
+	  data-ng-repeat='c in filteredComments = (comments | filter:commentFilter) | orderBy:"-date"'>
 	  <div class='message'>
 	    <span class='sender'>{{c.sender.name}}:</span>
 	    <span>{{c.message}}</span>
 	  </div>
 	  <div class='date'>{{c.prettyDate}}</div>
-	  <div class='location'>{{c.file}}:{{c.line}}</div>
+	  <div class='location'>{{c.location.toString()}}</div>
 	  <div class='state'>{{c.state}}</div>
+	</div>
+	<div data-ng-show='filteredComments.length === 0'>
+	  <span>No comments</span>
 	</div>
       </div>
 

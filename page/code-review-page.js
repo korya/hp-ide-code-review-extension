@@ -3,8 +3,9 @@ define([
   '../review.js',
   './layout.js',
   './compare-edior-ang',
+  './location',
   'css!./less/page',
-], function (eventBus, Review, layout, compareEditorAng) {
+], function (eventBus, Review, layout, compareEditorAng, Location) {
   'use strict';
 
   var _gitService;
@@ -179,9 +180,16 @@ define([
         'Message: ' + commit.message,
       ].join('\n');
       treeRoot.setLazyNodeStatus(DTNodeStatus_Ok);
+      var $scope = getPageScope();
       for (var i = 0; i < commit.files.length; i++) {
 	addFileToTree(commit, commit.files[i], treeRoot);
+
+	$scope.files.push({
+	  file: commit.files[i].path,
+	  commit: commit,
+	});
       }
+      $scope.$apply();
     }, function (error) {
       treeRoot.setLazyNodeStatus(DTNodeStatus_Error);
     });
@@ -205,6 +213,45 @@ define([
     }
   ];
 
+  function updateThreadFilters($scope) {
+    if (!$scope.files.length) {
+      $scope.thread = {};
+      $scope.thread.filters = [];
+      return;
+    }
+
+    var threads = [];
+    var hash = {};
+    /* Find all specific commented locations */
+    _.forEach($scope.comments, function (comment) {
+      var l = comment.location;
+      if (!l.isSpecific()) return;
+      if (!hash[l.file]) hash[l.file] = {};
+      hash[l.file][l.line] = l;
+    });
+    /* Make sure all files are present */
+    _.forEach($scope.files, function (obj) {
+      if (!hash[obj.file]) hash[obj.file] = {};
+    });
+    /* Now we can create the filters */
+    _.forOwn(hash, function (lines, file) {
+      _.forOwn(lines, function (l, line) {
+	threads.push(Location.filterFactory(l));
+      });
+      /* Add file wide only filter */
+      threads.unshift(Location.filterFactory(new Location(file, -1)));
+      /* Add all file filter */
+      threads.unshift(Location.filterFactory(new Location(file)));
+    });
+    /* Add review wide only filter */
+    threads.unshift(Location.filterFactory(new Location(-1)));
+    /* Add all filter */
+    threads.unshift(Location.filterFactory(new Location()));
+
+    $scope.thread.filters = threads;
+    $scope.thread.filter = $scope.thread.filters[0];
+  }
+
   var pageController = [
     '$scope', 'code-review-service', 'mega-menuService', 'git-service',
     function ($scope, codeReviewService, megaMenuService, gitService) {
@@ -215,15 +262,10 @@ define([
 	if (index !== -1) $scope.diffTabs.splice(index, 1);
       }
 
-      $scope.threadLabel = function (thread) {
-	if (!thread.file) return 'all comments';
-	if (!thread.line) return thread.file;
-	return thread.file + ':' + thread.line;
-      }
-
       $scope.review = undefined;
 
       $scope.$watch('review', function (review, oldVal, $scope) {
+	$scope.files = [];
 	$scope.diffTabs = [];
 	$scope.comments = [];
 
@@ -232,6 +274,7 @@ define([
 	$scope.comments = _.map(review.getComments(), function (c) {
 	  var comment = _.clone(c);
 
+	  comment.location = new Location(comment.file, comment.line);
 	  comment.prettyDate = prettifyDate(comment.date);
 	  return comment;
 	});
@@ -241,24 +284,39 @@ define([
 	$commits.append(showCommitInfo(review, review.getBaseCommit().sha1));
       });
 
+      $scope.$watch('files', function (files, oldVal, $scope) {
+	updateThreadFilters($scope);
+      }, true);
+
       $scope.$watch('comments', function (comments, oldVal, $scope) {
-	console.error('comments changed', {new:comments, old:oldVal, scope:$scope});
-	if (!comments) {
-	  $scope.threads = [];
+	updateThreadFilters($scope);
+      }, true);
+
+      $scope.$watch('thread.filter', function (threadFilter, oldVal, $scope) {
+	if (!threadFilter) {
+	  $scope.commentFilter = undefined;
 	  return;
 	}
 
-	/* A little bit verbose code to retrieve all distinct pairs of
-	 * <file>:<line>
-	 */
-	$scope.threads = _.chain(comments).groupBy('file').map(function (comments, file) {
-	  var fileThreads = _.chain(comments).map('line').uniq().map(function (line) {
-	    return {file:file, line:line};
-	  }).value();
-	  fileThreads.unshift({file:file});
-	  return fileThreads;
-	}).flatten().value();
-      }, true);
+	$scope.commentFilter = function CommentFilter(comment) {
+	  return threadFilter.filter(comment.location);
+	}
+
+	function getThreadName(threadFilter) {
+	  var file = threadFilter.file;
+	  var line = threadFilter.line;
+
+	  if (!threadFilter.isSpecific()) {
+	    if (file) return 'Showing all comments for file ' + file;
+	    return 'Showing all review comments'
+	  }
+
+	  if (file && line) return 'Comment line ' + line + ' in file ' + file;
+	  if (file) return 'Comment file ' + file;
+	  return 'Comment the whole review';
+	}
+	$scope.thread.name = getThreadName(threadFilter);
+      });
     }
   ];
 
