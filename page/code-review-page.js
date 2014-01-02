@@ -226,12 +226,12 @@ define([
       $scope.$watch('review', function (review, oldVal, $scope) {
 	if (!review) {
 	  $scope.diffTabs = [];
-	  $scope.discussion = [];
+	  $scope.comments = [];
 	  return;
 	}
 
 	$scope.diffTabs = [];
-	$scope.discussion = _.map(review.getComments(), function (c) {
+	$scope.comments = _.map(review.getComments(), function (c) {
 	  var comment = _.clone(c);
 
 	  comment.prettyDate = prettifyDate(comment.date);
@@ -243,9 +243,9 @@ define([
 	$commits.append(showCommitInfo(review, review.getBaseCommit().sha1));
       });
 
-      $scope.$watch('discussion', function (discussion, oldVal, $scope) {
-	console.error('discussion changed', {new:discussion, old:oldVal, scope:$scope});
-	if (!discussion) {
+      $scope.$watch('comments', function (comments, oldVal, $scope) {
+	console.error('comments changed', {new:comments, old:oldVal, scope:$scope});
+	if (!comments) {
 	  $scope.threads = [];
 	  return;
 	}
@@ -253,7 +253,7 @@ define([
 	/* A little bit verbose code to retrieve all distinct pairs of
 	 * <file>:<line>
 	 */
-	$scope.threads = _.chain(discussion).groupBy('file').map(function (comments, file) {
+	$scope.threads = _.chain(comments).groupBy('file').map(function (comments, file) {
 	  var fileThreads = _.chain(comments).map('line').uniq().map(function (line) {
 	    return {file:file, line:line};
 	  }).value();

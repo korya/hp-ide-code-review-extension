@@ -67,12 +67,12 @@
 	<label>{{commentThread}}</label>
       </div>
 
-      <div class='discussion'>
-	<div data-ng-show='discussion.length === 0'>
+      <div class='comments'>
+	<div data-ng-show='comments.length === 0'>
 	  <span>No comments</span>
 	</div>
 	<div class='comment'
-	  data-ng-repeat='c in discussion | filter:commentThread | orderBy:"-date"'>
+	  data-ng-repeat='c in comments | filter:commentThread | orderBy:"-date"'>
 	  <div class='message'>
 	    <span class='sender'>{{c.sender.name}}:</span>
 	    <span>{{c.message}}</span>
