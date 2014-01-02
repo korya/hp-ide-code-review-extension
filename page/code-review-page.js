@@ -215,6 +215,12 @@ define([
 	if (index !== -1) $scope.diffTabs.splice(index, 1);
       }
 
+      $scope.threadLabel = function (thread) {
+	if (!thread.file) return 'all comments';
+	if (!thread.line) return thread.file;
+	return thread.file + ':' + thread.line;
+      }
+
       $scope.review = undefined;
 
       $scope.$watch('review', function (review, oldVal, $scope) {
@@ -236,6 +242,25 @@ define([
 	$commits.empty();
 	$commits.append(showCommitInfo(review, review.getBaseCommit().sha1));
       });
+
+      $scope.$watch('discussion', function (discussion, oldVal, $scope) {
+	console.error('discussion changed', {new:discussion, old:oldVal, scope:$scope});
+	if (!discussion) {
+	  $scope.threads = [];
+	  return;
+	}
+
+	/* A little bit verbose code to retrieve all distinct pairs of
+	 * <file>:<line>
+	 */
+	$scope.threads = _.chain(discussion).groupBy('file').map(function (comments, file) {
+	  var fileThreads = _.chain(comments).map('line').uniq().map(function (line) {
+	    return {file:file, line:line};
+	  }).value();
+	  fileThreads.unshift({file:file});
+	  return fileThreads;
+	}).flatten().value();
+      }, true);
     }
   ];
 
