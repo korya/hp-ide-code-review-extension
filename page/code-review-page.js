@@ -243,6 +243,14 @@ define([
     openReview: function (review) {
       var $scope = getPageScope();
 
+      if ($scope.review) {
+	if ($scope.review.getId() === review.getId()) {
+	  return;
+	}
+
+	codeReviewPage.closeReview();
+      }
+
       $scope.review = new Review(review);
       $scope.review.creationDate = prettifyDate(review.creationDate);
       $scope.review.lastUpdatedDate = prettifyDate(review.lastUpdatedDate);
