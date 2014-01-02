@@ -119,6 +119,14 @@ define([
 	  scope.annotator = new CommentAnnotator();
 	  scope.annotator.init(scope.editor, function (line) {
 	    console.log('comment annotator: click on line', line);
+	    if (angular.isDefined(attrs.commentAnnotatorClick)) {
+	      var file = newFile.git.path;
+
+	      scope.$parent.$apply(function () {
+		scope.$parent.$eval(attrs.commentAnnotatorClick,
+		  {$clickedFile: file, $clickedLine: line});
+	      });
+	    }
 	  });
 	  scope.annotator.setComments(comments);
 	});
