@@ -79,21 +79,22 @@
     <pane title='center'>
 
       <tabset>
-	 <tab ng-repeat="file in openFiles"
-	   disabled="file.disabled"
-	   active="file.active">
+	 <tab ng-repeat="diffTab in diffTabs"
+	   disabled="diffTab.disabled"
+	   active="diffTab.active">
 
 	   <tab-heading>
-	     {{file.title}}
-	     <a ng-click="removeFile(file)" href=''>x</a>
+	     {{diffTab.title}}
+	     <a ng-click="removeDiffTab(diffTab)" href=''>x</a>
 	   </tab-heading>
 
-	     <div class='editor'>
-	       Here comes an editor of {{file.title}}
-	     </div>
-	     <div class='footer'>
-	       Here comes a footer of {{file.title}}
-	     </div>
+
+	   <div class='editor'>
+	     Here comes an editor of {{diffTab.title}}
+	   </div>
+	   <div class='footer'>
+	     Here comes a footer of {{diffTab.title}}
+	   </div>
 	 </tab>
        </tabset>
 

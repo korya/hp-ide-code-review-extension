@@ -28,18 +28,23 @@ define([
   function showDiffTab(commit, filepath, type) {
     var $scope = getPageScope();
     var id = type + '@' + commit.sha1 + ':' + filepath;
-    var file = _.find($scope.openFiles, { id: id})
+    var diffTab = _.find($scope.diffTabs, { id: id})
 
-    if (file) {
+    if (diffTab) {
       $scope.$apply(function () {
-	file.active = true;
+	diffTab.active = true;
       });
       return;
     }
 
     $scope.$apply(function () {
+      diffTab = {
+	id: id,
+	active: true,
+	title: filepath,
+      };
       console.log('git diff ' + commit.sha1 + '~ ' + commit.sha1 + ' ' + filepath);
-      $scope.openFiles.push({id:id, title: filepath, active:true});
+      $scope.diffTabs.push(diffTab);
     });
   }
 
@@ -176,21 +181,21 @@ define([
     function ($scope, codeReviewService, megaMenuService, gitService) {
       _gitService = gitService;
 
-      $scope.removeFile = function (file) {
-	var index = $scope.openFiles.indexOf(file);
-	if (index !== -1) $scope.openFiles.splice(index, 1);
+      $scope.removeDiffTab = function (file) {
+	var index = $scope.diffTabs.indexOf(file);
+	if (index !== -1) $scope.diffTabs.splice(index, 1);
       }
 
       $scope.review = undefined;
 
       $scope.$watch('review', function (review, oldVal, $scope) {
 	if (!review) {
-	  $scope.openFiles = [];
+	  $scope.diffTabs = [];
 	  $scope.discussion = [];
 	  return;
 	}
 
-	$scope.openFiles = [];
+	$scope.diffTabs = [];
 	$scope.discussion = _.map(review.getComments(), function (c) {
 	  var comment = _.clone(c);
 
