@@ -1,6 +1,7 @@
 define([
   '../../../orion-editor/1.00/modules/orion-compare/compare-wrapper',
-], function (CompareEditor) {
+  '../ui/comment-annotations',
+], function (CompareEditor, CommentAnnotator) {
 
   function createCompareEditor(id, type, title, oldFile, newFile) {
     var compare = {
@@ -90,6 +91,9 @@ define([
 	    editorCtrl.setNewContent('Fetching...');
 	    getContent(newFile.git).then(function (content) {
 	      editorCtrl.setNewContent(content);
+	      /* XXX Need a better way to notify that original content is loaded
+	       */
+	      scope.$emit('contentLoaded');
 	    }, function (err) {
 	      console.error('failed to load', newFile.name, ':', err);
 	      editorCtrl.setNewContent('Error: ' + err);
@@ -100,10 +104,43 @@ define([
     };
   }];
 
+  var commentAnnotatorDirective = function CommentAnnotatorDirective() {
+    return {
+      require: 'compareEditor',
+      restrict: 'A',
+      controller: function () {},
+      link: function (scope, element, attrs, editorCtrl) {
+	var newFile = scope.$parent.$eval(attrs.newFile);
+	var commentHolder = attrs.commentAnnotator;
+
+	scope.$on('contentLoaded', function () {
+	  var comments = scope.$parent.$eval(attrs.commentAnnotator);
+
+	  scope.annotator = new CommentAnnotator();
+	  scope.annotator.init(scope.editor, function (line) {
+	    console.log('comment annotator: click on line', line);
+	  });
+	  scope.annotator.setComments(comments);
+	});
+
+	scope.$watch(commentHolder, function () {
+	  var comments;
+
+	  if (!scope.annotator) return;
+
+	  comments = scope.$parent.$eval(attrs.commentAnnotator);
+	  scope.annotator.setComments(comments);
+	});
+      }
+    };
+  };
+
   return {
     init: function (module) {
       module.directive('compareEditor', compareEditorDirective);
       module.directive('gitFetch', gitFetchDirective);
+      module.directive('commentAnnotator', commentAnnotatorDirective);
+      CommentAnnotator.registerAnnotationType();
     },
   };
 });

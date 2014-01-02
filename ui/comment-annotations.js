@@ -147,6 +147,11 @@ define([
       this._updateAnnotations(this._comments);
     },
 
+    setComments: function (comments) {
+      this._comments = comments.slice();
+      this._updateAnnotations(this._comments);
+    },
+
     clean: function (comments) {
       var ruler = this._wrapper.getAnnotationRuler();
       var annotationModel = ruler.getAnnotationModel();

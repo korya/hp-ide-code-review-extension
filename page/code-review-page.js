@@ -71,6 +71,7 @@ define([
 	newFile: defineFileParams(repo, commit.sha1, file.path,
 	  sha1Abbrev + ':' + file.path,
 	  (file.action === 'removed') ? '' : undefined),
+	comments: $scope.review.getComments(file.path),
       };
       $scope.diffTabs.push(diffTab);
     });
