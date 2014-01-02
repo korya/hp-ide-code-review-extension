@@ -224,13 +224,11 @@ define([
       $scope.review = undefined;
 
       $scope.$watch('review', function (review, oldVal, $scope) {
-	if (!review) {
-	  $scope.diffTabs = [];
-	  $scope.comments = [];
-	  return;
-	}
-
 	$scope.diffTabs = [];
+	$scope.comments = [];
+
+	if (!review) return;
+
 	$scope.comments = _.map(review.getComments(), function (c) {
 	  var comment = _.clone(c);
 
