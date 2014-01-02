@@ -262,6 +262,13 @@ define([
 	if (index !== -1) $scope.diffTabs.splice(index, 1);
       }
 
+      $scope.setThreadFilter = function (file, line) {
+	var filter = _.find($scope.thread.filters, {file:file, line:line});
+
+	if (!filter) filter = Location.filterFactory(new Location(file, line)); 
+	$scope.thread.filter = filter;
+      }
+
       $scope.review = undefined;
 
       $scope.$watch('review', function (review, oldVal, $scope) {
