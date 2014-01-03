@@ -66,6 +66,21 @@
 	</select>
       </div>
 
+      <div class='commentInput'>
+	<div class='thread'>
+	  <span class='header'>{{thread.name}}</span>
+	</div>
+	<div>
+	  <input type="text" data-ng-model="newComment"
+	    data-ng-enter="addComment(newComment)"
+	    data-ng-disabled="!thread.filter.isSpecific()" />
+	  <button data-ng-click="addComment(newComment)"
+	    data-ng-disabled="!thread.filter.isSpecific()">
+	    Send
+	  </button>
+	</div>
+      </div>
+
       <div class='comments'>
 	<div class='comment'
 	  data-ng-repeat='c in filteredComments = (comments | filter:commentFilter) | orderBy:"-date"'>

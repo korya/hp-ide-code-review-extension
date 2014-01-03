@@ -262,6 +262,21 @@ define([
 	if (index !== -1) $scope.diffTabs.splice(index, 1);
       }
 
+      $scope.addComment = function (message) {
+	var review = $scope.review;
+	var file = $scope.thread.filter.file;
+	var line = $scope.thread.filter.line;
+
+	if (!$scope.thread.filter.isSpecific()) return;
+
+	if (!file || !file.trim()) { file = undefined; line = undefined; }
+	else if (line === -1) line = undefined;
+
+	codeReviewService.commentReview(review, message, file, line).done(function () {
+	  $scope.newMessage = "";
+	});
+      }
+
       $scope.setThreadFilter = function (file, line) {
 	var filter = _.find($scope.thread.filters, {file:file, line:line});
 
