@@ -13,6 +13,11 @@
 	  data-ng-class='{approved:review.isApproved(), rejected:review.isRejected()}'>
 	  <label>State:</label>
 	  <span>{{review.state}}</span>
+	  <span class='stateButton' data-ng-show='review.isMeReviwer'>
+	    <button type="button" data-ng-click="approveReview()">Approve</button>
+	    <button type="button" data-ng-click="rejectReview()">Reject</button>
+	    <button type="button" data-ng-click="resetReviewState()">Reset</button>
+	  </span>
 	</div>
 	<div class='author'>
 	  <label>Author:</label>

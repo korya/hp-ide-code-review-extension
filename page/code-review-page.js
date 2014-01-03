@@ -301,6 +301,16 @@ define([
 	$scope.thread.filter = filter;
       }
 
+      $scope.approveReview = function () {
+	codeReviewService.changeReviewState($scope.review, 'approved');
+      }
+      $scope.rejectReview = function () {
+	codeReviewService.changeReviewState($scope.review, 'rejected');
+      }
+      $scope.resetReviewState = function () {
+	codeReviewService.changeReviewState($scope.review, 'pending');
+      }
+
       $scope.review = undefined;
 
       $scope.$watch('review', function (review, oldVal, $scope) {
@@ -310,6 +320,9 @@ define([
 
 	if (!review) return;
 
+	$scope.review.creationDate = prettifyDate(review.creationDate);
+	$scope.review.lastUpdatedDate = prettifyDate(review.lastUpdatedDate);
+	$scope.review.isMeReviwer = review.isReviewer(codeReviewService.getMySelf().id);
 	$scope.comments = _.map(review.getComments(), function (c) {
 	  var comment = _.clone(c);
 
@@ -430,8 +443,6 @@ define([
       }
 
       $scope.review = new Review(review);
-      $scope.review.creationDate = prettifyDate(review.creationDate);
-      $scope.review.lastUpdatedDate = prettifyDate(review.lastUpdatedDate);
       if (!$scope.$$phase) { $scope.$apply(); }
     },
     closeReview: function () {
