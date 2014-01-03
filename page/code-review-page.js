@@ -336,22 +336,58 @@ define([
 	$scope.commentFilter = function CommentFilter(comment) {
 	  return threadFilter.filter(comment.location);
 	}
-
-	function getThreadName(threadFilter) {
-	  var file = threadFilter.file;
-	  var line = threadFilter.line;
-
-	  if (!threadFilter.isSpecific()) {
-	    if (file) return 'Showing all comments for file ' + file;
-	    return 'Showing all review comments'
-	  }
-
-	  if (file && line) return 'Comment line ' + line + ' in file ' + file;
-	  if (file) return 'Comment file ' + file;
-	  return 'Comment the whole review';
-	}
-	$scope.thread.name = getThreadName(threadFilter);
       });
+    }
+  ];
+
+  /* XXX I did not find a better way to compile and append a dynamically
+   * generated HTML.
+   */
+  var threadHeaderDirective = [
+    '$compile',
+    function ($compile) {
+      var HEADER_THREAD = 'headerThread';
+
+      function getThreadHeader(threadFilter) {
+	var file = threadFilter.file;
+	var line = threadFilter.line;
+
+	function addLink(text) {
+	  return '<location-link data-location="' + HEADER_THREAD + '">' +
+	    text + '</location-link>';
+	}
+
+	if (!threadFilter.isSpecific()) {
+	  if (file) return 'Showing all comments for file ' + addLink(file);
+	  return 'Showing all review comments'
+	}
+
+	if (file && line) return 'Comment line ' + line + ' in file ' + addLink(file);
+	if (file) return 'Comment file ' + addLink(file);
+	return 'Comment the whole review';
+      }
+      function getThreadHeaderHTML(threadFilter) {
+	return '<span class="header">' + getThreadHeader(threadFilter) + '</span>';
+      }
+
+      return {
+	restrict: 'E',
+	replace: true,
+	scope: {},
+	link: function (scope, elem, attrs) {
+	  if (angular.isDefined(attrs.thread)) {
+	    scope.$parent.$watch(attrs.thread, function (newVal) {
+	      elem.empty();
+	      if (!newVal) {
+		scope[HEADER_THREAD] = undefined;
+		return;
+	      }
+	      scope[HEADER_THREAD] = newVal;
+	      elem.append($compile(getThreadHeaderHTML(newVal))(scope));
+	    });
+	  }
+	},
+      };
     }
   ];
 
@@ -416,6 +452,7 @@ define([
       });
 
       extModule.directive('locationLink', locationLinkDirective);
+      extModule.directive('threadHeader', threadHeaderDirective);
       extModule.directive('ngEnter', function () {
 	return function ($scope, element, attrs) {
 	  element.bind("keydown keypress", function (event) {

@@ -67,9 +67,11 @@
       </div>
 
       <div class='commentInput'>
-	<div class='thread'>
-	  <span class='header'>{{thread.name}}</span>
-	</div>
+	<!-- XXX I did not find a better way to compile and append a
+	  -  dynamically generated HTML.
+	  -->
+	<thread-header data-thread="thread.filter">
+	</thread-header>
 	<div>
 	  <input type="text" data-ng-model="newComment"
 	    data-ng-enter="addComment(newComment)"
