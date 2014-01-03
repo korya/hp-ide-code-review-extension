@@ -78,7 +78,7 @@ define([
     });
   }
 
-  function showFileDiff(filename) {
+  function showFileDiff(filename, line) {
     var $scope = getPageScope();
     var commit = $scope.review.getBaseCommit();
     var file = _.find($scope.files, {
@@ -86,7 +86,11 @@ define([
       fileInfo : { path : filename },
     });
 
+    /* XXX set editor cursor to a specified line (if was specified) */
     showDiffTab(commit, file.fileInfo, 'twoWay');
+    if (line) {
+      $scope.setThreadFilter(filename, line);
+    }
   }
 
 
@@ -404,7 +408,8 @@ define([
 	    if (!loc || !loc.file) return;
 	    element.attr('title', 'Show changes for ' + loc.file);
 	    element.on('click', function () {
-	      showFileDiff(loc.file);
+	      showFileDiff(loc.file, loc.line);
+	      scope.$apply();
 	    });
 	  });
 	}
