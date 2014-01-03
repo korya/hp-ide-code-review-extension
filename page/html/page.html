@@ -89,7 +89,11 @@
 	    <span>{{c.message}}</span>
 	  </div>
 	  <div class='date'>{{c.prettyDate}}</div>
-	  <div class='location'>{{c.location.toString()}}</div>
+	  <div class='location'>
+	    <location-link data-location='c.location'>
+	      {{c.location.toString()}}
+	    </location-link>
+	  </div>
 	  <div class='state'>{{c.state}}</div>
 	</div>
 	<div data-ng-show='filteredComments.length === 0'>

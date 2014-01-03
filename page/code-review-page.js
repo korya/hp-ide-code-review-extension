@@ -78,6 +78,18 @@ define([
     });
   }
 
+  function showFileDiff(filename) {
+    var $scope = getPageScope();
+    var commit = $scope.review.getBaseCommit();
+    var file = _.find($scope.files, {
+      commit: commit,
+      fileInfo : { path : filename },
+    });
+
+    showDiffTab(commit, file.fileInfo, 'twoWay');
+  }
+
+
   function onNodeDblClick(node) {
     var commit = node.data.commit;
     var file = node.data.file;
@@ -185,7 +197,7 @@ define([
 	addFileToTree(commit, commit.files[i], treeRoot);
 
 	$scope.files.push({
-	  file: commit.files[i].path,
+	  fileInfo: commit.files[i],
 	  commit: commit,
 	});
       }
@@ -231,7 +243,8 @@ define([
     });
     /* Make sure all files are present */
     _.forEach($scope.files, function (obj) {
-      if (!hash[obj.file]) hash[obj.file] = {};
+      var filepath = obj.fileInfo.path;
+      if (!hash[filepath]) hash[filepath] = {};
     });
     /* Now we can create the filters */
     _.forOwn(hash, function (lines, file) {
@@ -342,6 +355,27 @@ define([
     }
   ];
 
+  var locationLinkDirective = function () {
+    return {
+      restrict: 'E',
+      replace: true,
+      transclude: true,
+      templateUrl: 'extensions/hpsw/code-review/1.00/page/html/location-link.html',
+      link: function (scope, element, attrs) {
+	if (angular.isDefined(attrs.location)) {
+	  scope.$watch(attrs.location, function (newVal) {
+	    var loc = newVal;
+	    if (!loc || !loc.file) return;
+	    element.attr('title', 'Show changes for ' + loc.file);
+	    element.on('click', function () {
+	      showFileDiff(loc.file);
+	    });
+	  });
+	}
+      },
+    };
+  };
+
   var codeReviewPage = {
     openReview: function (review) {
       var $scope = getPageScope();
@@ -381,6 +415,7 @@ define([
 	};
       });
 
+      extModule.directive('locationLink', locationLinkDirective);
       extModule.directive('ngEnter', function () {
 	return function ($scope, element, attrs) {
 	  element.bind("keydown keypress", function (event) {
