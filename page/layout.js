@@ -6,10 +6,7 @@ define([
       restrict: 'E',
       transclude: true,
       replace: true,
-      require: 'title',
-      scope: {
-	title: '@',
-      },
+      scope: {},
       templateUrl: 'extensions/hpsw/code-review/1.00/page/html/pane.html',
     };
   }
