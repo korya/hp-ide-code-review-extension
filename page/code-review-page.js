@@ -8,6 +8,11 @@ define([
 ], function (eventBus, Review, layout, compareEditorAng, Location) {
   'use strict';
 
+  var COMMENT = {
+    SHOW_ALL_IDX: -1,
+    SHOW_NO_LINE_IDX: 0,
+  };
+
   var _gitService;
 
   function buildSha1Abbrev(sha1) {
@@ -21,6 +26,19 @@ define([
 
   function prettifyDate(date) {
     return (new Date(date)).toGMTString();
+  }
+
+  function threadFilterFactory(loc) {
+    if (!loc) return new Location.filters.All();
+    if (!loc.file) {
+      return (loc.line === COMMENT.SHOW_NO_LINE_IDX) ?
+	new Location.filters.ReviewWide() : new Location.filters.All();
+    }
+    if (loc.line === COMMENT.SHOW_ALL_IDX)
+      return new Location.filters.FileAll(loc.file);
+    if (loc.line === COMMENT.SHOW_NO_LINE_IDX)
+      return new Location.filters.FileWide(loc.file);
+    return new Location.filters.FileLine(loc.file, loc.line);
   }
 
   function getPageScope() {
@@ -88,9 +106,7 @@ define([
 
     /* XXX set editor cursor to a specified line (if was specified) */
     showDiffTab(commit, file.fileInfo, 'twoWay');
-    if (line) {
-      $scope.setThreadFilter(filename, line);
-    }
+    $scope.setThreadFilter(filename, line || COMMENT.SHOW_ALL_IDX);
   }
 
 
@@ -229,49 +245,42 @@ define([
     }
   ];
 
-  function updateThreadFilters($scope) {
-    if (!$scope.files.length) {
-      $scope.thread = {};
-      $scope.thread.filters = [];
-      return;
-    }
-
-    var threads = [];
+  function buildThreadHash(files, comments) {
     var hash = {};
-    /* Find all specific commented locations */
-    _.forEach($scope.comments, function (comment) {
-      var l = comment.location;
-      if (!l.isSpecific()) return;
-      if (!hash[l.file]) hash[l.file] = {};
-      hash[l.file][l.line] = l;
-    });
-    /* Make sure all files are present */
-    _.forEach($scope.files, function (obj) {
-      var filepath = obj.fileInfo.path;
-      if (!hash[filepath]) hash[filepath] = {};
-    });
-    /* Now we can create the filters */
-    _.forOwn(hash, function (lines, file) {
-      _.forOwn(lines, function (l, line) {
-	threads.push(Location.filterFactory(l));
-      });
-      /* Add file wide only filter */
-      threads.unshift(Location.filterFactory(new Location(file, -1)));
-      /* Add all file filter */
-      threads.unshift(Location.filterFactory(new Location(file)));
-    });
-    /* Add review wide only filter */
-    threads.unshift(Location.filterFactory(new Location(-1)));
-    /* Add all filter */
-    threads.unshift(Location.filterFactory(new Location()));
 
-    $scope.thread.filters = threads;
-    $scope.thread.filter = $scope.thread.filters[0];
+    hash[''] = {};
+    hash[''][COMMENT.SHOW_ALL_IDX] = new Location.filters.All();
+    hash[''][COMMENT.SHOW_NO_LINE_IDX] = new Location.filters.ReviewWide();
+
+    if (!files.length) return hash;
+
+    /* Find all specific commented locations */
+    _.forEach(comments, function (comment) {
+      var loc = comment.location;
+
+      if (!loc.file || !loc.line) return;
+
+      if (!hash[loc.file]) hash[loc.file] = {};
+      hash[loc.file][loc.line] = threadFilterFactory(loc);
+    });
+
+    /* Make sure all files are present */
+    _.forEach(files, function (obj) {
+      var file = obj.fileInfo.path;
+
+      if (!hash[file]) hash[file] = {};
+      hash[file][COMMENT.SHOW_ALL_IDX] = new Location.filters.FileAll(file);
+      hash[file][COMMENT.SHOW_NO_LINE_IDX] = new Location.filters.FileWide(file);
+    });
+
+    return hash;
   }
 
   function processComment(c) {
     var comment = _.clone(c);
 
+    comment.file = comment.file || '';
+    comment.line = comment.line || COMMENT.SHOW_NO_LINE_IDX;
     comment.location = new Location(comment.file, comment.line);
     comment.prettyDate = prettifyDate(comment.date);
     return comment;
@@ -296,7 +305,7 @@ define([
 	if (!$scope.thread.filter.isSpecific()) return;
 
 	if (!file || !file.trim()) { file = undefined; line = undefined; }
-	else if (line === -1) line = undefined;
+	else if (line === COMMENT.SHOW_NO_LINE_IDX) line = undefined;
 
 	codeReviewService.commentReview(review, message, file, line).done(function () {
 	  $scope.comment.message = '';
@@ -305,10 +314,8 @@ define([
       }
 
       $scope.setThreadFilter = function (file, line) {
-	var filter = _.find($scope.thread.filters, {file:file, line:line});
-
-	if (!filter) filter = Location.filterFactory(new Location(file, line)); 
-	$scope.thread.filter = filter;
+	$scope.thread.filter = $scope.thread.filterHash[file][line] ||
+          threadFilterFactory(new Location(file, line));
       }
 
       $scope.approveReview = function () {
@@ -327,6 +334,7 @@ define([
 	$scope.files = [];
 	$scope.diffTabs = [];
 	$scope.comments = [];
+	$scope.thread = {};
 
 	if (!review) return;
 
@@ -341,11 +349,40 @@ define([
       });
 
       $scope.$watch('files', function (files, oldVal, $scope) {
-	updateThreadFilters($scope);
+	/* The comments should be available at this point */
+	$scope.thread.filterHash = buildThreadHash(files, $scope.comments);
       }, true);
 
-      $scope.$watch('comments', function (comments, oldVal, $scope) {
-	updateThreadFilters($scope);
+      $scope.$watch('thread.filterHash', function (hash, oldVal, $scope) {
+	$scope.thread.filters = [];
+	if (!hash) return;
+
+	/* Build the thread list */
+	var threads = [];
+	Object.keys(hash).sort().forEach(function (f) {
+	  Object.keys(hash[f]).sort().forEach(function (l) {
+	    threads.push(hash[f][l]);
+	  });
+	});
+
+	$scope.thread.filters = threads;
+      }, true);
+
+      $scope.$watch('thread.filters', function (filters, oldVal, $scope) {
+	if (!filters) return;
+
+	/* Update current filter to point to a list item */
+	if (!$scope.thread.filter) {
+	  $scope.thread.filter = $scope.thread.filters[0];
+	  return;
+	}
+
+	if ($scope.thread.filter.file && $scope.thread.filter.line) {
+	  var file = $scope.thread.filter.file;
+	  var line = $scope.thread.filter.line;
+
+	  $scope.thread.filter = $scope.thread.filterHash[file][line];
+	}
       }, true);
 
       $scope.$watch('thread.filter', function (threadFilter, oldVal, $scope) {
@@ -355,10 +392,28 @@ define([
 	  return;
 	}
 
+	if (!$scope.comment) $scope.comment = {};
 	$scope.comment.message = '';
 	$scope.commentFilter = function CommentFilter(comment) {
 	  return threadFilter.filter(comment.location);
 	}
+      });
+
+      eventBus.vent.on('code-review:comments-add', function (review, comments) {
+	if (!$scope.review || $scope.review.getId() !== review.getId()) return;
+
+	_.forEach(comments, function (c) {
+	  var comment = processComment(c);
+	  var file = comment.file;
+	  var line = comment.line;
+
+	  $scope.comments.push(comment);
+	  if (!$scope.thread.filterHash[file][line]) {
+	    $scope.thread.filterHash[file][line] =
+	      threadFilterFactory(new Location(file, line));
+	  }
+	});
+	$scope.$apply();
       });
     }
   ];

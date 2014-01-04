@@ -11,9 +11,6 @@ define([
       if (!this.line) return this.file;
       return this.file + ':' + this.line;
     },
-    isSpecific: function () {
-      return !!this.file && !!this.line;
-    },
   };
 
   function AnyLocationFilter() {
@@ -92,16 +89,14 @@ define([
     return true;
   }
 
-  function LocationFilterFactory(location) {
-    if (!location || !location.file) return new AnyLocationFilter();
-    if (location.file === -1) return new ReviewWideLocationFilter();
-    if (!location.line) return new FileAllLocationFilter(location.file);
-    if (location.line === -1) return new FileWideLocationFilter(location.file);
-    return new FileLineLocationFilter(location.file, location.line);
-  }
-
-  /* Adding as static method */
-  Location.filterFactory = LocationFilterFactory;
+  /* Adding as static member */
+  Location.filters = {
+    All: AnyLocationFilter,
+    ReviewWide: ReviewWideLocationFilter,
+    FileAll: FileAllLocationFilter,
+    FileWide: FileWideLocationFilter,
+    FileLine: FileLineLocationFilter,
+  };
 
   return Location;
 });
