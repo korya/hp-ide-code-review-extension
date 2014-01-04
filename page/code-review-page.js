@@ -415,6 +415,13 @@ define([
 	});
 	$scope.$apply();
       });
+
+      eventBus.vent.on('code-review:rem', function (review) {
+	if (!$scope.review || $scope.review.getId() !== review.getId()) return;
+
+	$scope.review = undefined;
+	$scope.$apply();
+      });
     }
   ];
 
