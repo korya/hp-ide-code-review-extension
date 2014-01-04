@@ -27,6 +27,9 @@ define([
     if (message.length > maxLen) message = message.substr(0, maxLen-3) + '...';
     return message;
   }
+  function buildDiffTabId(commit, filepath, type) {
+    return type + '@' + commit.sha1 + ':' + filepath;
+  }
 
   function prettifyDate(date) {
     return (new Date(date)).toGMTString();
@@ -51,8 +54,8 @@ define([
 
   function showDiffTab(commit, file, type) {
     var $scope = getPageScope();
-    var id = type + '@' + commit.sha1 + ':' + file.path;
-    var diffTab = _.find($scope.diffTabs, { editor: {id: id} })
+    var id = buildDiffTabId(commit, file.path, type);
+    var diffTab = _.find($scope.diffTabs, { editor: {id: id} });
 
     if (diffTab) {
       $scope.$apply(function () {
@@ -100,6 +103,17 @@ define([
     });
   }
 
+  function showFileDiffTab(commit, file) {
+    showDiffTab(commit, file, 'twoWay');
+  }
+
+  function findFileDiffTab(commit, filepath) {
+    var $scope = getPageScope();
+    var id = buildDiffTabId(commit, filepath, 'twoWay');
+
+    return _.find($scope.diffTabs, { editor: {id: id} });
+  }
+
   function showFileDiff(filename, line) {
     var $scope = getPageScope();
     var commit = $scope.review.getBaseCommit();
@@ -109,7 +123,7 @@ define([
     });
 
     /* XXX set editor cursor to a specified line (if was specified) */
-    showDiffTab(commit, file.fileInfo, 'twoWay');
+    showFileDiffTab(commit, file.fileInfo);
     $scope.setThreadFilter(filename, line || COMMENT.SHOW_ALL_IDX);
   }
 
@@ -120,7 +134,7 @@ define([
 
     /* We don't want to be in dynatree context -- it catches our exceptions */
     setTimeout(function () {
-      showDiffTab(commit, file, 'twoWay');
+      showFileDiffTab(commit, file);
     });
   }
 
@@ -410,11 +424,16 @@ define([
 	  var comment = processComment(c);
 	  var file = comment.file;
 	  var line = comment.line;
+	  var commit = review.getBaseCommit();
+	  var fileDiffTab = findFileDiffTab(commit, file);
 
 	  $scope.comments.push(comment);
 	  if (!$scope.thread.filterHash[file][line]) {
 	    $scope.thread.filterHash[file][line] =
 	      threadFilterFactory(new Location(file, line));
+	  }
+	  if (fileDiffTab) {
+	    fileDiffTab.comments.push(comment);
 	  }
 	});
 	$scope.$apply();

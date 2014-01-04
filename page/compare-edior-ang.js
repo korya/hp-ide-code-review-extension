@@ -111,7 +111,6 @@ define([
       controller: function () {},
       link: function (scope, element, attrs, editorCtrl) {
 	var newFile = scope.$parent.$eval(attrs.newFile);
-	var commentHolder = attrs.commentAnnotator;
 
 	scope.$on('contentLoaded', function () {
 	  var comments = scope.$parent.$eval(attrs.commentAnnotator);
@@ -129,15 +128,10 @@ define([
 	    }
 	  });
 	  scope.annotator.setComments(comments);
-	});
 
-	scope.$watch(commentHolder, function () {
-	  var comments;
-
-	  if (!scope.annotator) return;
-
-	  comments = scope.$parent.$eval(attrs.commentAnnotator);
-	  scope.annotator.setComments(comments);
+	  scope.$parent.$watch(attrs.commentAnnotator, function (newVal, oldVal) {
+	    scope.annotator.setComments(newVal);
+	  }, true);
 	});
       }
     };
