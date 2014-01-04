@@ -10,7 +10,7 @@ define([
     return [BASE_NOTIFICATION_ID].concat(parts).join('.');
   }
 
-  function runModule(notificationService) {
+  function runModule(notificationService, megaMenuService, codeReviewPage) {
     eventBus.vent.on('code-review:add', function (review) {
       notificationService.add({
 	id: buildNotificationID(['add', review.getId()]),
@@ -18,7 +18,8 @@ define([
 	message: 'New code review request "' + review.getTitle() + '"',
 	onClick: function () {
 	  console.log('review notification was clicked', {review:review});
-	  // XXX Open the review
+	  megaMenuService.selectPage('codeReviewPage');
+	  codeReviewPage.openReview(review);
 	},
       });
     });
@@ -38,7 +39,10 @@ define([
 	message: 'New comments for review "' + review.getTitle() + '"',
 	onClick: function () {
 	  console.log('review notification was clicked', {review:review});
+	  megaMenuService.selectPage('codeReviewPage');
+	  codeReviewPage.openReview(review);
 	  // XXX mark the comment seen
+	  // XXX open the correct file
 	},
       });
     });
@@ -59,12 +63,14 @@ define([
 	message: 'Review "' + review.getTitle() + '" ' + action,
 	onClick: function () {
 	  console.log('review notification was clicked', {review:review});
-	  // XXX Open the review
+	  megaMenuService.selectPage('codeReviewPage');
+	  codeReviewPage.openReview(review);
 	},
       });
     });
   }
-  runModule.$inject = [ 'notification-service' ];
+  runModule.$inject = [ 'notification-service', 'mega-menuService',
+    'code-review-page' ];
 
   return {
     run : runModule,
