@@ -269,6 +269,14 @@ define([
     $scope.thread.filter = $scope.thread.filters[0];
   }
 
+  function processComment(c) {
+    var comment = _.clone(c);
+
+    comment.location = new Location(comment.file, comment.line);
+    comment.prettyDate = prettifyDate(comment.date);
+    return comment;
+  }
+
   var pageController = [
     '$scope', 'code-review-service', 'mega-menuService', 'git-service',
     function ($scope, codeReviewService, megaMenuService, gitService) {
@@ -325,13 +333,7 @@ define([
 	$scope.review.creationDate = prettifyDate(review.creationDate);
 	$scope.review.lastUpdatedDate = prettifyDate(review.lastUpdatedDate);
 	$scope.review.isMeReviwer = review.isReviewer(codeReviewService.getMySelf().id);
-	$scope.comments = _.map(review.getComments(), function (c) {
-	  var comment = _.clone(c);
-
-	  comment.location = new Location(comment.file, comment.line);
-	  comment.prettyDate = prettifyDate(comment.date);
-	  return comment;
-	});
+	$scope.comments = _.map(review.getComments(), processComment);
 
 	var $commits = $('.codeReviewPage .details .commit .filetree-placeholder');
 	$commits.empty();
