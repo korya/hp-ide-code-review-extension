@@ -279,8 +279,9 @@ define([
 	if (index !== -1) $scope.diffTabs.splice(index, 1);
       }
 
-      $scope.addComment = function (message) {
+      $scope.addComment = function () {
 	var review = $scope.review;
+	var message = $scope.comment.message;
 	var file = $scope.thread.filter.file;
 	var line = $scope.thread.filter.line;
 
@@ -290,7 +291,8 @@ define([
 	else if (line === -1) line = undefined;
 
 	codeReviewService.commentReview(review, message, file, line).done(function () {
-	  $scope.newMessage = "";
+	  $scope.comment.message = '';
+	  $scope.$apply();
 	});
       }
 
@@ -346,10 +348,12 @@ define([
 
       $scope.$watch('thread.filter', function (threadFilter, oldVal, $scope) {
 	if (!threadFilter) {
+	  $scope.comment = {};
 	  $scope.commentFilter = undefined;
 	  return;
 	}
 
+	$scope.comment.message = '';
 	$scope.commentFilter = function CommentFilter(comment) {
 	  return threadFilter.filter(comment.location);
 	}

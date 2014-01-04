@@ -78,10 +78,10 @@
 	<thread-header data-thread="thread.filter">
 	</thread-header>
 	<div>
-	  <input type="text" data-ng-model="newComment"
-	    data-ng-enter="addComment(newComment)"
+	  <input type="text" data-ng-model="comment.message"
+	    data-ng-enter="addComment()"
 	    data-ng-disabled="!thread.filter.isSpecific()" />
-	  <button data-ng-click="addComment(newComment)"
+	  <button data-ng-click="addComment()"
 	    data-ng-disabled="!thread.filter.isSpecific()">
 	    Send
 	  </button>
