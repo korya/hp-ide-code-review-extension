@@ -422,6 +422,13 @@ define([
 	$scope.review = undefined;
 	$scope.$apply();
       });
+
+      eventBus.vent.on('code-review:state-change', function (review) {
+	if (!$scope.review || $scope.review.getId() !== review.getId()) return;
+
+	$scope.review.state = review.getState();
+	$scope.$apply();
+      });
     }
   ];
 
