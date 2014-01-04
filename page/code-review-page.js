@@ -15,6 +15,10 @@ define([
 
   var _gitService;
 
+  function numberCmp(a, b) {
+    return a - b;
+  }
+
   function buildSha1Abbrev(sha1) {
     return sha1.substr(0, 7); // Just truncate it
   }
@@ -360,7 +364,7 @@ define([
 	/* Build the thread list */
 	var threads = [];
 	Object.keys(hash).sort().forEach(function (f) {
-	  Object.keys(hash[f]).sort().forEach(function (l) {
+	  Object.keys(hash[f]).sort(numberCmp).forEach(function (l) {
 	    threads.push(hash[f][l]);
 	  });
 	});
