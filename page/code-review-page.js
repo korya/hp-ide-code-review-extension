@@ -422,6 +422,12 @@ define([
 	  return;
 	}
 
+	/* Files are loaded, and can be opened -- loading is done */
+	if ($scope.pageLoadingDeferred) {
+	  $scope.pageLoadingDeferred.resolve();
+	  $scope.pageLoadingDeferred = undefined;
+	}
+
 	if (!$scope.comment) $scope.comment = {};
 	$scope.comment.message = '';
 	$scope.commentFilter = function CommentFilter(comment) {
@@ -540,28 +546,47 @@ define([
     };
   };
 
-  var codeReviewPage = {
-    openReview: function (review) {
-      var $scope = getPageScope();
+  var codeReviewPageFactory = [
+    '$q',
+    function ($q) {
+      function openReview(review) {
+	var $scope = getPageScope();
 
-      if ($scope.review) {
-	if ($scope.review.getId() === review.getId()) {
-	  return;
+	if ($scope.review && $scope.review.getId() === review.getId()) {
+	  if ($scope.pageLoadingDeferred)
+	    return $scope.pageLoadingDeferred.promise;
+
+	  return $q.when();
 	}
 
-	codeReviewPage.closeReview();
+	return closeReview().then(function () {
+	  $scope.pageLoadingDeferred = $q.defer();
+	  $scope.review = new Review(review);
+	  if (!$scope.$$phase) { $scope.$apply(); }
+
+	  return $scope.pageLoadingDeferred.promise;
+	});
+      }
+      function closeReview(review) {
+	var $scope = getPageScope();
+
+	if ($scope.pageLoadingDeferred) {
+	  $scope.pageLoadingDeferred.reject('the review was closed');
+	  $scope.pageLoadingDeferred = undefined;
+	}
+
+	$scope.review = undefined;
+	if (!$scope.$$phase) { $scope.$apply(); }
+
+	return $q.when();
       }
 
-      $scope.review = new Review(review);
-      if (!$scope.$$phase) { $scope.$apply(); }
-    },
-    closeReview: function () {
-      var $scope = getPageScope();
-
-      $scope.review = undefined;
-      if (!$scope.$$phase) { $scope.$apply(); }
-    },
-  };
+      return {
+	openReview: openReview,
+	closeReview: closeReview,
+      };
+    }
+  ];
 
   return {
     init: function (extModule) {
@@ -594,9 +619,7 @@ define([
       compareEditorAng.init(extModule);
     },
     factorys: {
-      'code-review-page': function () {
-	return codeReviewPage;
-      }
+      'code-review-page': codeReviewPageFactory,
     },
   };
 });
