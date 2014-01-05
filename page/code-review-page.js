@@ -60,6 +60,44 @@ define([
     return angular.element($('.codeReviewPage')).scope();
   }
 
+  function createDiffTab(id, commit, file, type) {
+    var $scope = getPageScope();
+    var repo = $scope.review.getRepository().id;
+    var sha1Abbrev = buildSha1Abbrev(commit.sha1);
+
+    function defineFileParams(repo, revision, filepath, name, content) {
+      var params = {
+	name: name,
+	content: content,
+      };
+
+      if (content === undefined) {
+	params.git = {
+	  repository: repo,
+	  revision: revision,
+	  path: filepath,
+	};
+      }
+      return params;
+    }
+
+    return {
+      active: true,
+      editor: {
+	id: id,
+	title: sha1Abbrev + ' ' + file.path,
+	type: type,
+      },
+      oldFile: defineFileParams(repo, commit.sha1 + '~', file.path,
+	sha1Abbrev + '~' + ':' + file.path,
+	(file.action === 'added') ? '' : undefined),
+      newFile: defineFileParams(repo, commit.sha1, file.path,
+	sha1Abbrev + ':' + file.path,
+	(file.action === 'removed') ? '' : undefined),
+      comments: $scope.review.getComments(file.path),
+    };
+  }
+
   function showDiffTab(commit, file, type) {
     var $scope = getPageScope();
     var id = buildDiffTabId(commit, file.path, type);
@@ -72,41 +110,8 @@ define([
       return;
     }
 
+    diffTab = createDiffTab(id, commit, file, type);
     $scope.$apply(function () {
-      var repo = $scope.review.getRepository().id;
-      var sha1Abbrev = buildSha1Abbrev(commit.sha1);
-
-      function defineFileParams(repo, revision, filepath, name, content) {
-	var params = {
-	  name: name,
-	  content: content,
-	};
-
-	if (content === undefined) {
-	  params.git = {
-	    repository: repo,
-	    revision: revision,
-	    path: filepath,
-	  };
-	}
-	return params;
-      }
-
-      diffTab = {
-	active: true,
-	editor: {
-	  id: id,
-	  title: sha1Abbrev + ' ' + file.path,
-	  type: type,
-	},
-	oldFile: defineFileParams(repo, commit.sha1 + '~', file.path,
-	  sha1Abbrev + '~' + ':' + file.path,
-	  (file.action === 'added') ? '' : undefined),
-	newFile: defineFileParams(repo, commit.sha1, file.path,
-	  sha1Abbrev + ':' + file.path,
-	  (file.action === 'removed') ? '' : undefined),
-	comments: $scope.review.getComments(file.path),
-      };
       $scope.diffTabs.push(diffTab);
     });
   }
