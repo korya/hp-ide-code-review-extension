@@ -32,18 +32,23 @@ define([
       });
     });
 
-    eventBus.vent.on('code-review:comments-add', function (review) {
-      notificationService.add({
-	id: buildNotificationID(['comments-add', review.getId()]),
-	image: REVIEW_IMG,
-	message: 'New comments for review "' + review.getTitle() + '"',
-	onClick: function () {
-	  console.log('review notification was clicked', {review:review});
-	  megaMenuService.selectPage('codeReviewPage');
-	  codeReviewPage.openReview(review);
-	  // XXX mark the comment seen
-	  // XXX open the correct file
-	},
+    eventBus.vent.on('code-review:comments-add', function (review, comments) {
+      comments.forEach(function (comment) {
+	notificationService.add({
+	  id: buildNotificationID(['comments-add', review.getId()]),
+	  image: REVIEW_IMG,
+	  message: 'New comments for review "' + review.getTitle() + '"',
+	  onClick: function () {
+	    console.log('review notification was clicked', {review:review});
+	    megaMenuService.selectPage('codeReviewPage');
+	    codeReviewPage.openReview(review).then(function () {
+	      if (comment.file) {
+		codeReviewPage.openFile(comment.file);
+	      }
+	    });
+	    // XXX mark the comment seen
+	  },
+	});
       });
     });
 
