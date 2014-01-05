@@ -104,16 +104,12 @@ define([
     var diffTab = _.find($scope.diffTabs, { editor: {id: id} });
 
     if (diffTab) {
-      $scope.$apply(function () {
-	diffTab.active = true;
-      });
+      diffTab.active = true;
       return;
     }
 
     diffTab = createDiffTab(id, commit, file, type);
-    $scope.$apply(function () {
-      $scope.diffTabs.push(diffTab);
-    });
+    $scope.diffTabs.push(diffTab);
   }
 
   function showFileDiffTab(commit, file) {
@@ -142,12 +138,15 @@ define([
 
 
   function onNodeDblClick(node) {
+    var $scope = getPageScope();
     var commit = node.data.commit;
     var file = node.data.file;
 
     /* We don't want to be in dynatree context -- it catches our exceptions */
     setTimeout(function () {
-      showFileDiffTab(commit, file);
+      $scope.$apply(function () {
+	showFileDiffTab(commit, file);
+      });
     });
   }
 
