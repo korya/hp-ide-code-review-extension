@@ -28,7 +28,15 @@ define([
     return message;
   }
   function buildDiffTabId(commit, filepath, type) {
-    return type + '@' + commit.sha1 + ':' + filepath;
+    /* Legal characters for HTML id tag: [A-Za-z0-9-_.:]
+     * ':' is used as escape character, thus we have to escape its occurences in
+     * the original string as well.
+     */
+    var escapedFilepath = filepath.replace(/[^A-Za-z0-9-_.]/g, function (c) {
+      return ':' + c.charCodeAt(0).toString(16) + ':';
+    });
+
+    return type + '#' + commit.sha1 + '#' + escapedFilepath;
   }
 
   function prettifyDate(date) {
