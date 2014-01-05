@@ -580,10 +580,30 @@ define([
 
 	return $q.when();
       }
+      function openFile(file) {
+	var $scope = getPageScope();
+	
+	if (!$scope.review) {
+	  return $q.reject('No open review');
+	}
+
+	if ($scope.pageLoadingDeferred) {
+	  return $scope.pageLoadingDeferred.then(function () {
+	    showFileDiff(file);
+	    if (!$scope.$$phase) { $scope.$apply(); }
+	  });
+	}
+
+	showFileDiff(file);
+	if (!$scope.$$phase) { $scope.$apply(); }
+
+	return $q.when();
+      }
 
       return {
 	openReview: openReview,
 	closeReview: closeReview,
+	openFile: openFile,
       };
     }
   ];
