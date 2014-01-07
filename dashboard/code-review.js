@@ -44,12 +44,17 @@ define([
   dashboardConfig.$inject = ['mega-menuServiceProvider'];
 
   function dashboardController($scope, codeReviewService, megaMenuService,
-    codeReviewPage)
+    codeReviewPage, codeReviewNotificationService)
   {
     $scope.reviews = [];
     codeReviewService.getPendingReviews().then(function (reviews) {
       $scope.$apply(function () {
 	$scope.reviews = _.map(reviews, toLocalReview);
+	_.forEach(reviews, function (review) {
+	  if (review.isPending()) {
+	    codeReviewNotificationService.notifyPendingReview(review);
+	  }
+	});
       });
     }, function (error) {
       console.error('Failed to load reviews:', {error:error});
@@ -97,7 +102,7 @@ define([
     };
   }
   dashboardController.$inject = ['$scope', 'code-review-service',
-    'mega-menuService', 'code-review-page'
+    'mega-menuService', 'code-review-page', 'code-review-notifications-service'
   ];
 
   return {

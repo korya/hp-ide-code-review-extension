@@ -37,6 +37,7 @@ define({
       dependencies: [
 	'mega-menu',
 	'code-review-service',
+	'code-review-notifications',
       ]
     },
     {

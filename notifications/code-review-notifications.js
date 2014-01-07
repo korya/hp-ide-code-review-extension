@@ -10,18 +10,25 @@ define([
     return [BASE_NOTIFICATION_ID].concat(parts).join('.');
   }
 
+  function addPendingReviewNotification(notificationService, megaMenuService,
+    codeReviewPage, review)
+  {
+    notificationService.add({
+      id: buildNotificationID(['add', review.getId()]),
+      image: REVIEW_IMG,
+      message: 'New code review request "' + review.getTitle() + '"',
+      onClick: function () {
+	console.log('review notification was clicked', {review:review});
+	megaMenuService.selectPage('codeReviewPage');
+	codeReviewPage.openReview(review);
+      },
+    });
+  }
+
   function runModule(notificationService, megaMenuService, codeReviewPage) {
     eventBus.vent.on('code-review:add', function (review) {
-      notificationService.add({
-	id: buildNotificationID(['add', review.getId()]),
-	image: REVIEW_IMG,
-	message: 'New code review request "' + review.getTitle() + '"',
-	onClick: function () {
-	  console.log('review notification was clicked', {review:review});
-	  megaMenuService.selectPage('codeReviewPage');
-	  codeReviewPage.openReview(review);
-	},
-      });
+      addPendingReviewNotification(notificationService, megaMenuService,
+	codeReviewPage, review);
     });
 
     eventBus.vent.on('code-review:rem', function (review) {
@@ -77,7 +84,21 @@ define([
   runModule.$inject = [ 'notification-service', 'mega-menuService',
     'code-review-page' ];
 
+  function getFactory(notificationService, megaMenuService, codeReviewPage) {
+    return {
+      notifyPendingReview: function (review) {
+	addPendingReviewNotification(notificationService, megaMenuService,
+	  codeReviewPage, review);
+      },
+    };
+  }
+  getFactory.$inject = [ 'notification-service', 'mega-menuService',
+    'code-review-page' ];
+
   return {
     run : runModule,
+    factorys: {
+      'code-review-notifications-service': getFactory,
+    },
   };
 });
