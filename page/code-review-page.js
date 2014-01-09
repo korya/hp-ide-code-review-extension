@@ -318,7 +318,10 @@ define([
 
   var pageController = [
     '$scope', 'code-review-service', 'mega-menuService', 'git-service',
-    function ($scope, codeReviewService, megaMenuService, gitService) {
+    'user-service',
+    function ($scope, codeReviewService, megaMenuService, gitService,
+      userService)
+    {
       _gitService = gitService;
 
       $scope.removeDiffTab = function (file) {
@@ -370,7 +373,7 @@ define([
 
 	$scope.review.creationDate = prettifyDate(review.creationDate);
 	$scope.review.lastUpdatedDate = prettifyDate(review.lastUpdatedDate);
-	$scope.review.isMeReviwer = review.isReviewer(codeReviewService.getMySelf().id);
+	$scope.review.isMeReviwer = review.isReviewer(userService.getUserName());
 	$scope.comments = _.map(review.getComments(), processComment);
 
 	var $commits = $('.codeReviewPage .details .commit .filetree-placeholder');

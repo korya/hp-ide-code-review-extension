@@ -8,7 +8,7 @@ define([
   'use strict';
 
   var _codeReviewService, _dialogService, _editorsService, _layoutService,
-      _gitService, _projectsService;
+      _gitService, _projectsService, _userService;
   var $holder, $incoming, $reviewList, $reviewListEmptyMessage;
 
   function getProjectRepo(project) {
@@ -341,7 +341,7 @@ define([
       .append($('<div><label>Discussion: </label></div>').append($discussion))
       .append($('<div>').append($commentInput).append($commentBtn));
 
-    if (review.isReviewer(_codeReviewService.getMySelf().id)) {
+    if (review.isReviewer(_userService.getUserName())) {
       var $approvedBtn = $('<button type="button" name="review-approve">Approve</button>');
       var $rejectBtn = $('<button type="button" name="review-reject">Reject</button>');
       var $undoBtn = $('<button type="button" name="review-undo">Undo</button>');
@@ -674,7 +674,7 @@ define([
   }
 
   function runModule(codeReviewService, dialogService, editorsService,
-    layoutService, gitService, projectsService)
+    layoutService, gitService, projectsService, userService)
   {
     _codeReviewService = codeReviewService;
     _dialogService = dialogService;
@@ -682,6 +682,7 @@ define([
     _layoutService = layoutService;
     _gitService = gitService;
     _projectsService = projectsService;
+    _userService = userService;
 
     eventBus.vent.on('code-review:add', addReviewItem);
     eventBus.vent.on('code-review:rem', removeReviewItem);
@@ -705,6 +706,7 @@ define([
       'ide-layoutService',
       'git-service',
       'projects-service',
+      'user-service',
       runModule
     ],
   };

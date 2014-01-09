@@ -1,15 +1,17 @@
 define([
   'bower_components/socket.io-client/dist/socket.io.min.js',
-  'scripts/core/user',
   'scripts/core/event-bus',
   '../review.js',
-], function (io, userService, eventBus, Review) {
+], function (io, eventBus, Review) {
   'use strict';
 
-  var _projectsService;
+  var REST_API_URL = '/services/rest/v1';
+  var PULL_REQUEST_URL = REST_API_URL + '/pull-requests';
+
+  var _myselfUser;
 
   function getReviews(query) {
-    var url = '/pull-requests' + (query ? '?' + $.param(query) : '');
+    var url = PULL_REQUEST_URL + (query ? '?' + $.param(query) : '');
 
     return $.ajax({
       type: 'GET',
@@ -22,7 +24,7 @@ define([
   function postReview(review) {
     return $.ajax({
       type: 'POST',
-      url: '/pull-requests',
+      url: PULL_REQUEST_URL,
       contentType: "application/json; charset=utf-8",
       data: JSON.stringify(review),
       dataType: "json",
@@ -32,7 +34,7 @@ define([
   function postReviewComment(review, comment) {
     return $.ajax({
       type: 'POST',
-      url: '/pull-requests/' + review.getId() + '/comments',
+      url: PULL_REQUEST_URL + '/' + review.getId() + '/comments',
       contentType: "application/json; charset=utf-8",
       data: JSON.stringify(comment),
       dataType: "json",
@@ -42,7 +44,7 @@ define([
   function postReviewState(review, newState) {
     return $.ajax({
       type: 'PUT',
-      url: '/pull-requests/' + review.getId() + '/state',
+      url: PULL_REQUEST_URL + '/' + review.getId() + '/state',
       contentType: "application/json; charset=utf-8",
       data: JSON.stringify({ state: newState }),
       dataType: "json",
@@ -51,13 +53,13 @@ define([
 
   function getUserInfo(user) {
     return {
-      name: user.fullName,
-      id: user.email,
+      name: user.name.familyName + ' ' + user.name.givenName,
+      id: user.username,
     }
   }
 
   function getMySelf() {
-    return getUserInfo(userService.getCache());
+    return _myselfUser;
   }
 
   function createNewReviewRequest(repo, title, description, reviewer, commit) {
@@ -123,7 +125,7 @@ define([
   }
 
   function getReviewers() {
-    return $.getJSON('/users').then(function (reviewers) {
+    return $.getJSON(REST_API_URL + '/users').then(function (reviewers) {
       return $.when(_.map(reviewers, getUserInfo));
     });
   }
@@ -145,6 +147,8 @@ define([
     socket.on('review-comments-add', function (reviewParams, comments) {
       var review = new Review(reviewParams);
 
+      Review.processComments(comments);
+
       eventBus.vent.trigger('code-review:comments-add', review, comments);
     });
 
@@ -161,20 +165,21 @@ define([
     getPendingReviews: getPendingReviews,
     getReviewers: getReviewers,
     changeReviewState: postReviewState,
-    getMySelf: getMySelf,
   };
 
-  function runService(projectsService) {
+  function runService(userService) {
     var socket = io.connect('/pull-requests');
 
     socket.on('connect', function () { ioConnect(socket); });
 
-    _projectsService = projectsService;
+    _myselfUser = {
+      id: userService.getUserName(),
+    };
   }
 
   return {
     run : [
-      'projects-service',
+      'user-service',
       runService
     ],
     factorys: {
