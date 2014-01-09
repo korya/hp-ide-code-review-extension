@@ -21,11 +21,11 @@
 	</div>
 	<div class='author'>
 	  <label>Author:</label>
-	  <span>{{review.author.name}}</span>
+	  <span>{{review.author.fullName}}</span>
 	</div>
 	<div class='reviewer'>
 	  <label>Reviewer:</label>
-	  <span>{{review.reviewer.name}}</span>
+	  <span>{{review.reviewer.fullName}}</span>
 	</div>
 	<div class='description'>
 	  <label>Description:</label>
@@ -92,7 +92,7 @@
 	<div class='comment'
 	  data-ng-repeat='c in filteredComments = (comments | filter:commentFilter) | orderBy:"-date"'>
 	  <div class='message'>
-	    <span class='sender'>{{c.sender.name}}:</span>
+	    <span class='sender'>{{c.sender.fullName}}:</span>
 	    <span>{{c.message}}</span>
 	  </div>
 	  <div class='date'>{{c.prettyDate}}</div>

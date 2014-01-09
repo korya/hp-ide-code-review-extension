@@ -44,14 +44,14 @@ define([
     return {
       restrict: 'E',
       replace: true,
-      scope: {},
+      scope: true,
       templateUrl: 'extensions/hpsw/code-review/1.00/page/html/compare.html',
       controller: compareEditorController,
       link: function (scope, element, attrs) {
-	var params = scope.$parent.$eval(attrs.params);
+	var params = scope.$eval(attrs.params);
 
-	scope.oldFile = scope.$parent.$eval(attrs.oldFile);
-	scope.newFile = scope.$parent.$eval(attrs.newFile);
+	scope.oldFile = scope.$eval(attrs.oldFile);
+	scope.newFile = scope.$eval(attrs.newFile);
 
 	scope.editor = createCompareEditor(params.id, params.type, params.title,
 	  scope.oldFile, scope.newFile);
@@ -65,8 +65,8 @@ define([
       restrict: 'A',
       controller: function () {},
       link: function (scope, element, attrs, editorCtrl) {
-	var oldFile = scope.$parent.$eval(attrs.oldFile);
-	var newFile = scope.$parent.$eval(attrs.newFile);
+	var oldFile = scope.$eval(attrs.oldFile);
+	var newFile = scope.$eval(attrs.newFile);
 
 	if (!oldFile.git && !newFile.git) return;
 
@@ -110,10 +110,10 @@ define([
       restrict: 'A',
       controller: function () {},
       link: function (scope, element, attrs, editorCtrl) {
-	var newFile = scope.$parent.$eval(attrs.newFile);
+	var newFile = scope.$eval(attrs.newFile);
 
 	scope.$on('contentLoaded', function () {
-	  var comments = scope.$parent.$eval(attrs.commentAnnotator);
+	  var comments = scope.$eval(attrs.commentAnnotator);
 
 	  scope.annotator = new CommentAnnotator();
 	  scope.annotator.init(scope.editor, function (line) {
@@ -121,15 +121,15 @@ define([
 	    if (angular.isDefined(attrs.commentAnnotatorClick)) {
 	      var file = newFile.git.path;
 
-	      scope.$parent.$apply(function () {
-		scope.$parent.$eval(attrs.commentAnnotatorClick,
+	      scope.$apply(function () {
+		scope.$eval(attrs.commentAnnotatorClick,
 		  {$clickedFile: file, $clickedLine: line});
 	      });
 	    }
 	  });
 	  scope.annotator.setComments(comments);
 
-	  scope.$parent.$watch(attrs.commentAnnotator, function (newVal, oldVal) {
+	  scope.$watch(attrs.commentAnnotator, function (newVal, oldVal) {
 	    scope.annotator.setComments(newVal);
 	  }, true);
 	});

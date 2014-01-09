@@ -1,5 +1,6 @@
 define([
-], function () {
+  './utils',
+], function (utils) {
 
   /**
    * @name Review
@@ -45,10 +46,13 @@ define([
    */
 
   function getUserInfo(user) {
-    return {
-      id: user.id,
-      name: user.name || user.id,
-    };
+    return utils.getUsers()[user.id] || {};
+  }
+
+  function processComments(comments) {
+    _.forEach(comments, function (comment) {
+      comment.sender = getUserInfo(comment.sender);
+    });
   }
 
   function Review(params) {
@@ -69,6 +73,7 @@ define([
     this.lastUpdatedDate = params.lastUpdatedDate || this.creationDate;
     // XXX Not a tree
     this.comments = params.comments || [];
+    processComments(this.comments);
     this.state = params.state || 'pending';
     // XXX Internal field set by mongoDB
     this._id = params._id;
@@ -139,6 +144,9 @@ define([
     if (line === undefined) return _.filter(this.comments, {file:file});
     return _.filter(this.comments, {file:file, line:line});
   };
+
+  /* Static methods */
+  Review.processComments = processComments;
 
   return Review;
 })
