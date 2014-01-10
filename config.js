@@ -46,6 +46,8 @@ define({
       dependencies: [
 	'mega-menu',
 	'code-review-service',
+	'editors',
+	'orion-compare',
       ]
     },
     {
