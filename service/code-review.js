@@ -129,7 +129,12 @@ define([
   }
 
   function getReviewers() {
-    return $.getJSON(REST_API_URL + '/users').then(function (reviewers) {
+    return $.getJSON(REST_API_URL + '/users').then(function (users) {
+      var reviewers = _.filter(users, function (user) {
+	if (user.username === getMySelf().id) return;
+	if (user.username === 'adminUser@hp.com') return;
+	return true;
+      });
       return $.when(_.map(reviewers, getUserInfo));
     });
   }
