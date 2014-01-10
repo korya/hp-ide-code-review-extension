@@ -1,6 +1,6 @@
 define([
   '../../../orion-editor/1.00/modules/orion-compare/compare-wrapper',
-  '../ui/comment-annotations',
+  './comment-annotations',
 ], function (CompareEditor, CommentAnnotator) {
 
   function createCompareEditor(id, type, title, oldFile, newFile) {

@@ -1,6 +1,7 @@
 define([
   'orion/editor/annotations',
   'orion/compare/compareRulers',
+  'css!./less/comment-annotations',
 ], function(mAnnotations, mCompareRulers) {
   'use strict';
 

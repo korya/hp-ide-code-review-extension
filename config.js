@@ -13,18 +13,6 @@ define({
       ]
     },
     {
-      id: 'code-review-ui',
-      main: 'ui/code-review',
-      dependencies: [
-	'code-review-service',
-	'ide-layout',
-	'editors',
-	'dialog',
-	'orion-compare',
-	'notification-service',
-      ]
-    },
-    {
       id: 'code-review-notifications',
       main: 'notifications/code-review-notifications',
       dependencies: [
