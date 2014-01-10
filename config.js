@@ -48,5 +48,13 @@ define({
 	'code-review-service',
       ]
     },
+    {
+      id: 'code-review-ide',
+      main: 'ide/code-review-ide-hooks',
+      dependencies: [
+	'code-review-service',
+	'dialog',
+      ]
+    },
   ]
 });

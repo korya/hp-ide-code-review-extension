@@ -1,0 +1,60 @@
+<div class='code-review create dialog'>
+
+  <form name="form" novalidate>
+
+    <div class='title'>
+      <label> Title: </label>
+      <input type="text" name="title"
+	data-ng-model="request.title"
+	data-ng-minlength="5"
+	data-ng-required="true"
+	/>
+      <span class="error" data-ng-show="showErorrs && form.title.$invalid">
+	Invalid:
+	<span data-ng-show="form.title.$error.required">Title is required</span>
+	<span data-ng-show="form.title.$error.minlength">Title must be 5 chars at least</span>
+      </span>
+    </div>
+
+    <div class='reviewer'>
+      <label> Reviewer: </label>
+      <select name="reviewer"
+	data-ng-model="request.reviewer"
+	data-ng-options="r.label for r in reviewers"
+	data-ng-required="true"
+	/>
+      <span class="error" data-ng-show="showErorrs && form.reviewer.$invalid">
+	Invalid:
+	<span data-ng-show="form.reviewer.$error.required">Reviewer is required</span>
+      </span>
+    </div>
+
+    <div class='commit'>
+      <label> Commit: </label>
+      <select name="commit"
+	data-ng-model="request.commit"
+	data-ng-options="c.label for c in commits"
+	data-ng-required="true"
+	/>
+      <span class="error" data-ng-show="showErorrs && form.commit.$invalid">
+	Invalid:
+	<span data-ng-show="form.commit.$error.required">Commit is required</span>
+      </span>
+    </div>
+
+    <div class='description'>
+      <label> Description: </label>
+      <textarea cols="80" rows="5" data-ng-model="request.description">
+      </textarea>
+    </div>
+
+    <div>
+      <span class="error" data-ng-show="showErorrs && serverError">
+	Server Error:
+	<span>{{serverError}}</span>
+      </span>
+    </div>
+
+  </form>
+
+</div>
