@@ -21,7 +21,7 @@ define({
     },
     {
       id: 'code-review-dashboard',
-      main: 'dashboard/code-review',
+      main: 'dashboard/code-review-dashboard',
       dependencies: [
 	'mega-menu',
 	'code-review-service',
