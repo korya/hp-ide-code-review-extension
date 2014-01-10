@@ -39,12 +39,16 @@ define([
       }
 
       $scope.$watch('reviewers', function (reviewers) {
+	$scope.request.reviewer = undefined;
+	if (reviewers && reviewers.length) $scope.request.reviewer = reviewers[0];
 	_.forEach(reviewers, function (user) {
 	  user.label = user.name + ' ' + '<' + user.id + '>';
 	});
       });
 
       $scope.$watch('commits', function (commits) {
+	$scope.request.commit = undefined;
+	if (commits && commits.length) $scope.request.commit = commits[0];
 	_.forEach(commits, function (commit) {
 	  commit.label = buildCommitName(commit, 80);
 	});
