@@ -64,8 +64,12 @@ define([
 
   function createNewReviewRequest(repo, title, description, reviewer, commit) {
     var params = {
-      author: getMySelf(),
-      reviewer: reviewer,
+      author: {
+	id: getMySelf().id,
+      },
+      reviewer: {
+	id: reviewer.id,
+      },
       baseCommit: {
 	sha1: commit.sha1,
       },
@@ -77,7 +81,7 @@ define([
       description: description,
     };
 
-    return postReview(new Review(params));
+    return postReview(new Review.BaseReview(params));
   }
 
   function commentReview(review, message, file, line) {

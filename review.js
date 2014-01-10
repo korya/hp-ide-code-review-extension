@@ -3,12 +3,12 @@ define([
 ], function (utils) {
 
   /**
-   * @name Review
-   * @class A <code>Review</code> represents a code review (pull request)
+   * @name BaseReview
+   * @class A <code>BaseReview</code> represents a code review (pull request)
    *
-   * @property {String} title Review title
-   * @property {String} description Review description
-   * @property {ReviewUser} author Review author
+   * @property {String} title BaseReview title
+   * @property {String} description BaseReview description
+   * @property {ReviewUser} author BaseReview author
    * @property {[ReviewUser]} reviewers The reviewer list for the review  //XXX
    * @property {String} creationDate Date of creation in ISO 8601 format
    * @property {String} lastUpdatedDate Date of last update in ISO 8601 format
@@ -44,21 +44,10 @@ define([
    * @property {String} parentId //XXX
    * @property {String} state One of 'approved' or 'rejected' //XXX
    */
-
-  function getUserInfo(user) {
-    return utils.getUsers()[user.id] || {};
-  }
-
-  function processComments(comments) {
-    _.forEach(comments, function (comment) {
-      comment.sender = getUserInfo(comment.sender);
-    });
-  }
-
-  function Review(params) {
-    this.author = getUserInfo(params.author);
+  function BaseReview(params) {
+    this.author = params.author;
     // XXX: should be an array
-    this.reviewer = getUserInfo(params.reviewer);
+    this.reviewer = params.reviewer;
     this.repository = {
       id: params.repository.id,
       remote: params.repository.remote,
@@ -73,79 +62,98 @@ define([
     this.lastUpdatedDate = params.lastUpdatedDate || this.creationDate;
     // XXX Not a tree
     this.comments = params.comments || [];
-    processComments(this.comments);
     this.state = params.state || 'pending';
     // XXX Internal field set by mongoDB
     this._id = params._id;
   }
 
-  Review.prototype.getId = function () {
+  BaseReview.prototype.getId = function () {
     return this._id;
   };
 
-  Review.prototype.getAuthor = function () {
+  BaseReview.prototype.getAuthor = function () {
     return this.author;
   };
 
-  Review.prototype.getReviewer = function () {
+  BaseReview.prototype.getReviewer = function () {
     return this.reviewer;
   };
 
-  Review.prototype.getRepository = function () {
+  BaseReview.prototype.getRepository = function () {
     return this.repository;
   };
 
-  Review.prototype.getTitle = function () {
+  BaseReview.prototype.getTitle = function () {
     return this.title;
   };
 
-  Review.prototype.getDescription = function () {
+  BaseReview.prototype.getDescription = function () {
     return this.description;
   };
 
-  Review.prototype.getCreationDate = function () {
+  BaseReview.prototype.getCreationDate = function () {
     return this.creationDate;
   };
 
-  Review.prototype.getLastUpdateDate = function () {
+  BaseReview.prototype.getLastUpdateDate = function () {
     return this.lastUpdatedDate;
   };
 
-  Review.prototype.getBaseCommit = function () {
+  BaseReview.prototype.getBaseCommit = function () {
     return this.baseCommit;
   };
 
-  Review.prototype.getState = function () {
+  BaseReview.prototype.getState = function () {
     return this.state;
   };
 
-  Review.prototype.isApproved = function () {
+  BaseReview.prototype.isApproved = function () {
     return this.state === 'approved';
   };
 
-  Review.prototype.isRejected = function () {
+  BaseReview.prototype.isRejected = function () {
     return this.state === 'rejected';
   };
 
-  Review.prototype.isPending = function () {
+  BaseReview.prototype.isPending = function () {
     return !this.isApproved() && !this.isRejected();
   }
 
-  Review.prototype.isReviewer = function (userId) {
+  BaseReview.prototype.isReviewer = function (userId) {
     return this.reviewer.id === userId;
   };
 
-  Review.prototype.isInvolved = function (userId) {
+  BaseReview.prototype.isInvolved = function (userId) {
     return this.author.id === userId || this.isReviewer(userId);
   };
 
-  Review.prototype.getComments = function (file, line) {
+  BaseReview.prototype.getComments = function (file, line) {
     if (file === undefined) return _.filter(this.comments);
     if (line === undefined) return _.filter(this.comments, {file:file});
     return _.filter(this.comments, {file:file, line:line});
   };
 
+  function getUserInfo(user) {
+    return utils.getUsers()[user.id] || {};
+  }
+
+  function processComments(comments) {
+    _.forEach(comments, function (comment) {
+      comment.sender = getUserInfo(comment.sender);
+    });
+  }
+
+  function Review(params) {
+    BaseReview.call(this, params)
+    this.author = getUserInfo(this.author);
+    // XXX: should be an array
+    this.reviewer = getUserInfo(this.reviewer);
+    processComments(this.comments);
+  }
+  Review.prototype = Object.create(BaseReview.prototype);
+
   /* Static methods */
+  Review.BaseReview = BaseReview;
   Review.processComments = processComments;
 
   return Review;
