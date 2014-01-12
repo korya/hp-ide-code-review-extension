@@ -4,6 +4,10 @@ define([
 ], function(eventBus) {
   'use strict';
 
+  function prettifyDate(date) {
+    return (new Date(date)).toGMTString();
+  }
+
   function LocalReview(review) {
     this.id = review.getId();
     this.title = review.getTitle();
@@ -11,10 +15,10 @@ define([
     this.state = review.getState();
     this.approved = review.isApproved();
     this.rejected = review.isRejected();
-    this.author = review.getAuthor();
-    this.reviewers = [review.getReviewer()];
-    this.creationDate = review.getCreationDate();
-    this.lastUpdatedDate = review.getLastUpdateDate();
+    this.author = review.getAuthor().fullName;
+    this.reviewer = review.getReviewer().fullName;
+    this.creationDate = prettifyDate(review.getCreationDate());
+    this.lastUpdatedDate = prettifyDate(review.getLastUpdateDate());
     this.original = review;
   }
 

@@ -127,11 +127,25 @@
   }
 
   .boxData {
-    font-size: .7em;
+    font-size: .8em;
     display: inline;
     height: 100%;
     width: auto;
     vertical-align: top;
+
+    .state {
+      font-size: 1.1em;
+    }
+    .state.approved {
+      font-size: 1.1em;
+      color: green;
+      font-weight: bold;
+    }
+    .state.rejected {
+      font-size: 1.1em;
+      color: red;
+      font-weight: bold;
+    }
   }
 
   .boxFooter {

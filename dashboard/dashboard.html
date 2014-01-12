@@ -26,10 +26,13 @@
 	<div class='boxCustomArea'>
 	  <div class='boxData'>
 	    <div> Author: {{review.author}} </div>
-	    <div> Reviewers: {{review.reviewers}} </div>
+	    <div> Reviewer: {{review.reviewer}} </div>
 	    <div> Created: {{review.creationDate}} </div>
 	    <div> Last modified: {{review.lastUpdatedDate}} </div>
-	    <div> State: {{review.state}} </div>
+	    <div class='state' data-ng-class='{approved:review.approved, rejected:review.rejected}'>
+	      <label>State:</label>
+	      <span class='state'>{{review.state}}</span>
+	    </div>
 	  </div>
 	</div>
 
