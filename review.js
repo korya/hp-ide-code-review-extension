@@ -49,8 +49,7 @@ define([
     // XXX: should be an array
     this.reviewer = params.reviewer;
     this.repository = {
-      id: params.repository.id,
-      remote: params.repository.remote,
+      url: params.repository.url,
     };
     this.branch = params.branch;
     this.baseCommit = {

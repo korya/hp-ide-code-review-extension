@@ -29,6 +29,19 @@
       </span>
     </div>
 
+    <div class='remote'>
+      <label> Remote Repository: </label>
+      <select name="remote"
+	data-ng-model="request.remote"
+	data-ng-options="r.label for r in remotes"
+	data-ng-required="true"
+	/>
+      <span class="error" data-ng-show="showErorrs && form.remote.$invalid">
+	Invalid:
+	<span data-ng-show="form.remote.$error.required">Remote repository is required</span>
+      </span>
+    </div>
+
     <div class='commit'>
       <label> Commit: </label>
       <select name="commit"

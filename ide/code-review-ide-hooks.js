@@ -28,8 +28,8 @@ define([
 	  return (new $.Deferred()).reject('validation error').promise();
 	}
 
-	promise = codeReviewService.createNewReviewRequest(r.repo, r.title,
-	  r.desc, r.reviewer, r.commit);
+	promise = codeReviewService.createNewReviewRequest(r.localRepo,
+	  r.remote, r.title, r.desc, r.reviewer, r.commit);
 	promise.fail(function (err) {
 	  $scope.serverError = JSON.stringify(err);
 	  $scope.showErorrs = true;
@@ -54,18 +54,28 @@ define([
 	});
       });
 
-      var project = projectsService.getActiveProject();
+      $scope.$watch('remotes', function (remotes) {
+	$scope.request.remote = undefined;
+	if (remotes && remotes.length) $scope.request.remote = remotes[0];
+	_.forEach(remotes, function (remote) {
+	  remote.label = remote.name + ' ' + remote.url;
+	});
+      });
 
       $scope.request = {
-	repo: { id: project.id },
+	localRepo: projectsService.getActiveProject().id,
       };
 
-      gitService.log(project.id).then(function (commits) {
+      gitService.log($scope.request.localRepo).then(function (commits) {
 	$scope.commits = commits;
 	$scope.$apply();
       });
       codeReviewService.getReviewers().then(function (reviewers) {
 	$scope.reviewers = reviewers;
+	$scope.$apply();
+      });
+      gitService.getRemotes($scope.request.localRepo).then(function (remotes) {
+	$scope.remotes = remotes;
 	$scope.$apply();
       });
     }

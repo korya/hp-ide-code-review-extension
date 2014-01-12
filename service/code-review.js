@@ -9,6 +9,7 @@ define([
   var PULL_REQUEST_URL = REST_API_URL + '/pull-requests';
 
   var _myselfUser;
+  var _gitService;
 
   function getReviews(query) {
     var url = PULL_REQUEST_URL + (query ? '?' + $.param(query) : '');
@@ -62,7 +63,25 @@ define([
     return _myselfUser;
   }
 
-  function createNewReviewRequest(repo, title, description, reviewer, commit) {
+  function getDashedDate() {
+    var now = new Date();
+
+    return [
+      now.getFullYear(),
+      now.getMonth(),
+      now.getDate(),
+      now.getHours(),
+      now.getMinutes(),
+      now.getSeconds(),
+      /* XXX What the chance that user creates multiple review requests in
+       * the same second?
+       */
+      now.getMilliseconds()
+    ].join('-');
+  }
+
+  function createNewReviewRequest(repo, remote, title, description, reviewer, commit) {
+    var branchName = ['code-review', getMySelf().id, getDashedDate()].join('.');
     var params = {
       author: {
 	id: getMySelf().id,
@@ -74,14 +93,30 @@ define([
 	sha1: commit.sha1,
       },
       repository: {
-	id: repo.id,
-	remote: repo.remote,
+	url: remote.url,
       },
+      branch: branchName,
       title: title,
       description: description,
     };
 
-    return postReview(new Review.BaseReview(params));
+    return _gitService.push(repo, remote.name, 'HEAD:' + branchName)
+      .then(function () {
+	return postReview(new Review.BaseReview(params));
+      });
+  }
+
+  function fetchReviewRepository(review) {
+    var localRepo = ['code-review', review.getId()].join('.');
+    var remoteUrl = review.getRepository().url;
+
+    /* XXX Assume the repo (if it exists) is our */
+    return _gitService.getLocalRepositories().then(function (repos) {
+      if (repos.indexOf(localRepo) !== -1) return;
+      return _gitService.clone(remoteUrl, localRepo, true);
+    }).then(function () {
+      return localRepo;
+    });
   }
 
   function commentReview(review, message, file, line) {
@@ -170,17 +205,19 @@ define([
 
   var codeReviewService = {
     createNewReviewRequest: createNewReviewRequest,
+    fetchReviewRepository: fetchReviewRepository,
     commentReview: commentReview,
     getPendingReviews: getPendingReviews,
     getReviewers: getReviewers,
     changeReviewState: postReviewState,
   };
 
-  function runService(userService) {
+  function runService(userService, gitService) {
     var socket = io.connect('/pull-requests');
 
     socket.on('connect', function () { ioConnect(socket); });
 
+    _gitService = gitService;
     _myselfUser = {
       id: userService.getUserName(),
     };
@@ -189,6 +226,7 @@ define([
   return {
     run : [
       'user-service',
+      'git-service',
       runService
     ],
     factorys: {

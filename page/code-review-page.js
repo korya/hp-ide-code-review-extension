@@ -378,7 +378,12 @@ define([
 
 	var $commits = $('.codeReviewPage .details .commit .filetree-placeholder');
 	$commits.empty();
-	$commits.append(showCommitInfo(review, review.getBaseCommit().sha1));
+	codeReviewService.fetchReviewRepository(review).then(function (localRepo) {
+	  review.repository.id = localRepo;
+	  $commits.append(showCommitInfo(review, review.getBaseCommit().sha1));
+	}, function (error) {
+	  console.error('failed fetching review repo:', {r:review, e:error});
+	});
       });
 
       $scope.$watch('files', function (files, oldVal, $scope) {

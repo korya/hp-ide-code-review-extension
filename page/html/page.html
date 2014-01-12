@@ -43,13 +43,17 @@
 	  <span>{{review.lastUpdatedDate}}</span>
 	</div>
 	<div class='repository'>
-	  <div data-ng-show='review.repository.id'>
-	    <label>Repository ID:</label>
-	    <span>{{review.repository.id}}</span>
-	  </div>
-	  <div data-ng-show='!review.repository.id'>
-	    <label>Repository Remote:</label>
+	  <div>
+	    <label>Remote Repository:</label>
 	    <span>{{review.repository.remote}}</span>
+	  </div>
+	  <div>
+	    <label>Remote branch:</label>
+	    <span>{{review.branch}}</span>
+	  </div>
+	  <div>
+	    <label>Local Repository:</label>
+	    <span>{{review.repository.id}}</span>
 	  </div>
 	</div>
 	<div class='commit'>
