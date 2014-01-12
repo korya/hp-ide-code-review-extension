@@ -3,67 +3,77 @@
   <div class='container'>
 
     <pane class='left'>
+      <pane class='top'>
 
-      <div class='noReview' data-ng-show='review === undefined'>
-      </div>
+	<div class='noReview' data-ng-show='review === undefined'>
+	</div>
 
-      <div class='details' data-ng-show='review !== undefined'>
-	<div class='title'><span>{{review.title}}</span></div>
-	<div class='state'
-	  data-ng-class='{approved:review.isApproved(), rejected:review.isRejected()}'>
-	  <label>State:</label>
-	  <span>{{review.state}}</span>
-	  <span class='stateButton' data-ng-show='review.isMeReviwer'>
-	    <button type="button" data-ng-click="approveReview()">Approve</button>
-	    <button type="button" data-ng-click="rejectReview()">Reject</button>
-	    <button type="button" data-ng-click="resetReviewState()">Reset</button>
-	  </span>
-	</div>
-	<div class='author'>
-	  <label>Author:</label>
-	  <span>{{review.author.fullName}}</span>
-	</div>
-	<div class='reviewer'>
-	  <label>Reviewer:</label>
-	  <span>{{review.reviewer.fullName}}</span>
-	</div>
-	<div class='description'>
-	  <label>Description:</label>
-	  <span data-ng-show='!review.description' class='empty'>
-	    No description
-	  </span>
-	  <span>{{review.description}}</span>
-	</div>
-	<div class='creationDate'>
-	  <label>Creation Date:</label>
-	  <span>{{review.creationDate}}</span>
-	</div>
-	<div class='lastUpdatedDate'>
-	  <label>Last Update Date:</label>
-	  <span>{{review.lastUpdatedDate}}</span>
-	</div>
-	<div class='repository'>
-	  <div>
-	    <label>Remote Repository:</label>
-	    <span>{{review.repository.remote}}</span>
+	<div class='details' data-ng-show='review !== undefined'>
+	  <div class='title'><span>{{review.title}}</span></div>
+	  <div class='state'
+	    data-ng-class='{approved:review.isApproved(), rejected:review.isRejected()}'>
+	    <label>State:</label>
+	    <span>{{review.state}}</span>
+	    <span class='stateButton' data-ng-show='review.isMeReviwer'>
+	      <button type="button" data-ng-click="approveReview()">Approve</button>
+	      <button type="button" data-ng-click="rejectReview()">Reject</button>
+	      <button type="button" data-ng-click="resetReviewState()">Reset</button>
+	    </span>
 	  </div>
-	  <div>
-	    <label>Remote branch:</label>
-	    <span>{{review.branch}}</span>
-	  </div>
-	  <div>
-	    <label>Local Repository:</label>
-	    <span>{{review.repository.id}}</span>
+	  <div class='commit'>
+	    <label>Commits:</label>
+	    <div class='filetree-placeholder'>
+	      <!-- place holder for dynatrees -->
+	    </div>
 	  </div>
 	</div>
-	<div class='commit'>
-	  <label>Commits:</label>
-	  <div class='filetree-placeholder'>
-	    <!-- place holder for dynatrees -->
-	  </div>
-	</div>
-      </div>
 
+      </pane>
+
+      <pane class='bottom'>
+
+	<div data-ng-show='review !== undefined'>
+	  <div><h3>More Details</h3></div>
+	  <div class='author'>
+	    <label>Author:</label>
+	    <span>{{review.author.fullName}}</span>
+	  </div>
+	  <div class='reviewer'>
+	    <label>Reviewer:</label>
+	    <span>{{review.reviewer.fullName}}</span>
+	  </div>
+	  <div class='description'>
+	    <label>Description:</label>
+	    <span data-ng-show='!review.description' class='empty'>
+	      No description
+	    </span>
+	    <span>{{review.description}}</span>
+	  </div>
+	  <div class='creationDate'>
+	    <label>Creation Date:</label>
+	    <span>{{review.creationDate}}</span>
+	  </div>
+	  <div class='lastUpdatedDate'>
+	    <label>Last Update Date:</label>
+	    <span>{{review.lastUpdatedDate}}</span>
+	  </div>
+	  <div class='repository'>
+	    <div>
+	      <label>Remote Repository:</label>
+	      <span>{{review.repository.remote}}</span>
+	    </div>
+	    <div>
+	      <label>Remote branch:</label>
+	      <span>{{review.branch}}</span>
+	    </div>
+	    <div>
+	      <label>Local Repository:</label>
+	      <span>{{review.repository.id}}</span>
+	    </div>
+	  </div>
+	</div>
+
+      </pane>
     </pane>
 
     <pane class='right'>
