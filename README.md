@@ -5,6 +5,25 @@ send them to others and get a feedback.
 
 ## Install
 
+### Prerequisites
+
+This extension depends on:
+ - [Notification extension](http://github.com/korya/hp-ide-notification-extension)
+ - [Git extension](http://github.com/korya/hp-ide-git-extension)
+
+So, first please install these extensions.
+
+### Patches
+
+In addition, you have to apply some patches, providing a functionality that is still
+missing in a mainstream.
+
+TO BE DONE...
+
+### Install Instructions
+
+Now you're ready to install the extension itself.
+
 ```shell
 $ cd <IDE source>
 $ git submodule add \
