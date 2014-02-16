@@ -1,4 +1,4 @@
-# Code Review extension for HP Pronq IDE
+# Code Review for HP Pronq IDE
 
 The extension allows the developers to easily create code reviews (aka pull requests),
 send them to others and get a feedback.
@@ -6,7 +6,7 @@ send them to others and get a feedback.
 ## Install
 
 Fast and easy way:
-```shell
+```bash
 $ cd <IDE source>
 $ curl -Ls http://tiny.cc/cawcodereview | sh
 ```
