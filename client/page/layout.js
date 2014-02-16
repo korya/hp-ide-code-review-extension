@@ -1,5 +1,6 @@
 define([
-], function () {
+  '../utils',
+], function (utils) {
 
   var paneDirective = function () {
     return {
@@ -7,7 +8,7 @@ define([
       transclude: true,
       replace: true,
       scope: {},
-      templateUrl: 'extensions/hpsw/code-review/1.00/page/html/pane.html',
+      templateUrl: utils.cwd() + '/page/html/pane.html',
     };
   }
 
@@ -50,7 +51,7 @@ define([
       replace: true,
       scope: {},
       controller: tabsetController,
-      templateUrl: 'extensions/hpsw/code-review/1.00/page/html/tabset.html',
+      templateUrl: utils.cwd() + '/page/html/tabset.html',
       link: function(scope, element, attrs) {
 	scope.vertical = angular.isDefined(attrs.vertical) ? scope.$parent.$eval(attrs.vertical) : false;
 	scope.justified = angular.isDefined(attrs.justified) ? scope.$parent.$eval(attrs.justified) : false;
@@ -64,7 +65,7 @@ define([
       require: '^tabset',
       restrict: 'EA',
       replace: true,
-      templateUrl: 'extensions/hpsw/code-review/1.00/page/html/tab.html',
+      templateUrl: utils.cwd() + '/page/html/tab.html',
       transclude: true,
       scope: {
 	heading: '@',

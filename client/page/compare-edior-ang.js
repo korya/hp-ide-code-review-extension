@@ -1,7 +1,8 @@
 define([
-  '../../../orion-editor/1.00/modules/orion-compare/compare-wrapper',
+  '../../../../orion-editor/1.00/modules/orion-compare/compare-wrapper',
+  '../utils',
   './comment-annotations',
-], function (CompareEditor, CommentAnnotator) {
+], function (CompareEditor, utils, CommentAnnotator) {
 
   function createCompareEditor(id, type, title, oldFile, newFile) {
     var compare = {
@@ -45,7 +46,7 @@ define([
       restrict: 'E',
       replace: true,
       scope: true,
-      templateUrl: 'extensions/hpsw/code-review/1.00/page/html/compare.html',
+      templateUrl: utils.cwd() + '/page/html/compare.html',
       controller: compareEditorController,
       link: function (scope, element, attrs) {
 	var params = scope.$eval(attrs.params);

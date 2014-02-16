@@ -1,6 +1,8 @@
 define([
+  '../utils',
   'css!./less/code-review-ide',
-], function () {
+], function (utils) {
+  'use strict';
 
   function buildSha1Abbrev(sha1) {
     return sha1.substr(0, 7); // Just truncate it
@@ -87,7 +89,7 @@ define([
 	restrict: 'E',
 	replace: true,
 	scope: {},
-	templateUrl: 'extensions/hpsw/code-review/1.00/ide/html/create-dialog.html',
+	templateUrl: utils.cwd() + '/ide/html/create-dialog.html',
 	controller: createRequestController,
       };
     }

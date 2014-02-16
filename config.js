@@ -6,7 +6,7 @@ define({
   moduleLoaders:[
     {
       id: 'code-review-service',
-      main: 'service/code-review',
+      main: 'client/service/code-review',
       dependencies: [
 	'projects-service',
 	'git-service',
@@ -14,14 +14,14 @@ define({
     },
     {
       id: 'code-review-notifications',
-      main: 'notifications/code-review-notifications',
+      main: 'client/notifications/code-review-notifications',
       dependencies: [
 	'notification-service',
       ]
     },
     {
       id: 'code-review-dashboard',
-      main: 'dashboard/code-review-dashboard',
+      main: 'client/dashboard/code-review-dashboard',
       dependencies: [
 	'mega-menu',
 	'code-review-service',
@@ -30,7 +30,7 @@ define({
     },
     {
       id: 'code-review-page',
-      main: 'page/code-review-page',
+      main: 'client/page/code-review-page',
       dependencies: [
 	'mega-menu',
 	'code-review-service',
@@ -40,7 +40,7 @@ define({
     },
     {
       id: 'code-review-ide',
-      main: 'ide/code-review-ide-hooks',
+      main: 'client/ide/code-review-ide-hooks',
       dependencies: [
 	'code-review-service',
 	'dialog',

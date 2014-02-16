@@ -1,7 +1,8 @@
 define([
   'scripts/core/event-bus',
+  '../utils',
   'css!./less/dashboard',
-], function(eventBus) {
+], function(eventBus, utils) {
   'use strict';
 
   function prettifyDate(date) {
@@ -119,7 +120,7 @@ define([
 	return {
 	  restrict: 'E',
 	  replace: true,
-	  templateUrl: 'extensions/hpsw/code-review/1.00/dashboard/dashboard.html'
+	  templateUrl: utils.cwd() + '/dashboard/dashboard.html'
 	};
       });
     },
