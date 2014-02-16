@@ -17,5 +17,8 @@ define([
 
   return {
     getUsers: function () { return _users; },
+    cwd: function () {
+      return 'extensions/hpsw/code-review/1.00/client';
+    },
   }
 });

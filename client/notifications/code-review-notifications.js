@@ -1,9 +1,10 @@
 define([
   'scripts/core/event-bus',
-], function (eventBus) {
+  '../utils',
+], function (eventBus, utils) {
   'use strict';
 
-  var REVIEW_IMG = 'extensions/hpsw/code-review/1.00/notifications/images/comment-talk-multiple-50.png';
+  var REVIEW_IMG = utils.cwd() + '/notifications/images/comment-talk-multiple-50.png';
   var BASE_NOTIFICATION_ID = 'code-review';
 
   function buildNotificationID(parts) {

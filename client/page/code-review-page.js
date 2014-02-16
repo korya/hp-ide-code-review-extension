@@ -1,11 +1,12 @@
 define([
   'scripts/core/event-bus',
+  '../utils',
   '../review.js',
   './layout.js',
   './compare-edior-ang',
   './location',
   'css!./less/page',
-], function (eventBus, Review, layout, compareEditorAng, Location) {
+], function (eventBus, utils, Review, layout, compareEditorAng, Location) {
   'use strict';
 
   var COMMENT = {
@@ -537,7 +538,7 @@ define([
       restrict: 'E',
       replace: true,
       transclude: true,
-      templateUrl: 'extensions/hpsw/code-review/1.00/page/html/location-link.html',
+      templateUrl: utils.cwd() + '/page/html/location-link.html',
       link: function (scope, element, attrs) {
 	if (angular.isDefined(attrs.location)) {
 	  scope.$watch(attrs.location, function (newVal) {
@@ -626,7 +627,7 @@ define([
 	return {
 	  restrict: 'E',
 	  replace: true,
-	  templateUrl: 'extensions/hpsw/code-review/1.00/page/html/page.html'
+	  templateUrl: utils.cwd() + '/page/html/page.html'
 	};
       });
 
