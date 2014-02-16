@@ -16,7 +16,7 @@ index 9dc83a6..c83ab19 100644
 +		{id: 'orion-core', main:'./modules/orion-core/orion-core', dependencies:[]},
 +		{id: 'orion-compare', main:'./modules/orion-compare/orion-compare-module', dependencies:['editors', 'orion-core']},
  	]
-});
+ });
 diff --git a/app/extensions/hpsw/orion-editor/1.00/modules/orion-compare/compare-wrapper.js b/app/extensions/hpsw/orion-editor/1.00/modules/orion-compare/compare-wrapper.js
 new file mode 100644
 index 0000000..8f51e0a
