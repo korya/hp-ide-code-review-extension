@@ -1,0 +1,82 @@
+commit d855638744dd6f828fe33abdfa73c69a8f418c16
+Author: korya <korya@github.com>
+Date:   Thu Feb 13 19:35:19 2014 +0200
+
+    [DEMO] Add users; users are assigned in round robin fashion
+
+diff --git a/server/open-source/user/user-init.js b/server/open-source/user/user-init.js
+index 4b94a2c..8c0260f 100644
+--- a/server/open-source/user/user-init.js
++++ b/server/open-source/user/user-init.js
+@@ -22,6 +22,24 @@ var users = function () {
+                 password: ''
+             }
+         },
++	demoAuthor: {
++            name: {familyName: "Demo", givenName: "Author"},
++	    username: 'author@hp.com',
++	    avatar: 'http://whywedoit.files.wordpress.com/2009/04/smile.jpg',
++            tenants: [],
++	    credentials: {
++		password: ''
++	    }
++	},
++	demoReviewer: {
++            name: {familyName: "Demo", givenName: "Reviewer"},
++	    username: 'reviewer@hp.com',
++	    avatar: 'http://whywedoit.files.wordpress.com/2009/04/smile.jpg',
++            tenants: [],
++	    credentials: {
++		password: ''
++	    }
++	},
+         admin: {
+             name: {familyName: "Admin", givenName: "User"},
+             username: 'adminUser@hp.com',
+@@ -86,6 +104,14 @@ exports.initDefaultUsers = function (tenantId, db) {
+     admin.tenants.push(tenantId);
+     addDemoUsers(db, admin);
+ 
++    var demoAuthor = users().demoAuthor;
++    demoAuthor.tenants.push(tenantId);
++    addDemoUsers(db, demoAuthor);
++
++    var demoReviewer = users().demoReviewer;
++    demoReviewer.tenants.push(tenantId);
++    addDemoUsers(db, demoReviewer);
++
+     var demo = users().demo;
+     demo.tenants.push(tenantId);
+     addDemoUsers(db, demo);
+@@ -107,3 +133,18 @@ exports.initDefaultSaaSUsers = function (tenantId, db) {
+     saasone.tenants.push(tenantId);
+     addDemoUsers(db, saasone);
+ };
++
++var userRoundRobin;
++exports.getMockUser = function () {
++  if (!userRoundRobin) {
++    var userList = users();
++    userRoundRobin = [
++      userList.demo,
++      userList.demoAuthor,
++      userList.demoReviewer,
++    ];
++  }
++  var user = userRoundRobin.shift();
++  userRoundRobin.push(user);
++  return user;
++};
+diff --git a/server/open-source/user/user.js b/server/open-source/user/user.js
+index 3a26daf..dbdf732 100644
+--- a/server/open-source/user/user.js
++++ b/server/open-source/user/user.js
+@@ -63,7 +63,7 @@ exports.initRoutes = function (app) {
+         //Temp solution until we will have login in open source.
+         var headerUsernameField = config.headerUsernameField();
+         if (!req.headers[headerUsernameField]) {
+-            req.headers[headerUsernameField] = 'demoUser@hp.com';
++            req.headers[headerUsernameField] = userInit.getMockUser().username;
+         }
+         userManagement.getCurrentUserInfo(req, function (error, result) {
+             res.json(result.returnCode, result.message);

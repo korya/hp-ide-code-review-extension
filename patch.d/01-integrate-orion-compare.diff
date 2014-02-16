@@ -1,0 +1,485 @@
+commit 6d24c5c71b446c1c9bd5a5a51875c6edc8f68d5c
+Author: korya <korya@github.com>
+Date:   Thu Feb 13 19:27:37 2014 +0200
+
+    Integrate Orion compare
+
+diff --git a/app/extensions/hpsw/orion-editor/1.00/config.js b/app/extensions/hpsw/orion-editor/1.00/config.js
+index 9dc83a6..c83ab19 100644
+--- a/app/extensions/hpsw/orion-editor/1.00/config.js
++++ b/app/extensions/hpsw/orion-editor/1.00/config.js
+@@ -12,6 +12,7 @@ define({
+ 	description:'contribute the orion editor to the editorsService',
+ 	moduleLoaders:[
+ 		{id: 'orion-editor', main:'./modules/orion-editor/orion-editor-module', dependencies:['editors', 'orion-core','project-tree-extensions'] },
+-		{id: 'orion-core', main:'./modules/orion-core/orion-core', dependencies:[]}
++		{id: 'orion-core', main:'./modules/orion-core/orion-core', dependencies:[]},
++		{id: 'orion-compare', main:'./modules/orion-compare/orion-compare-module', dependencies:['editors', 'orion-core']},
+ 	]
+});
+diff --git a/app/extensions/hpsw/orion-editor/1.00/modules/orion-compare/compare-wrapper.js b/app/extensions/hpsw/orion-editor/1.00/modules/orion-compare/compare-wrapper.js
+new file mode 100644
+index 0000000..8f51e0a
+--- /dev/null
++++ b/app/extensions/hpsw/orion-editor/1.00/modules/orion-compare/compare-wrapper.js
+@@ -0,0 +1,216 @@
++define([
++  'orion/compare/compareView',
++  'orion/compare/compareHighlighter',
++  'css!./compareView.css'
++  ],
++function(mCompareView, mCompareHighlighter)
++{
++  /**
++   * CompareEditor constructor abstract type.
++   *
++   * @constructor CompareEditor
++   * @param {Object} [options] The following are configuration properties that can be passed
++   *    to the editor at construction time:
++   *    @param {string} options.id Id that that should identify this specific instance of the editor in the system.
++   *    @param {string} [options.title] the title of the editor. Usually the name of the file being edited with it's extension.
++   *    @param {Object} [options.initialContent] Represents data which this specific editor can read.
++   *    @param {Object} [options.contentType] Content that uniquely identifies the data. It has to be a data that this editor knows how
++   *    to consume. It should be in the MIME content type format. This is needed because in some cases one editor implementation can consume more than one file type.
++   *    @param {bool} [options.isReadonly] if the data that is displayed in the editor should be readonly and not editable.
++   */
++  function CompareEditor(options) {
++    this._options = options;
++    //TODO: add error handling.
++    this._id = options.id || "no id was assigned";
++    this._contentType = options.contentType || {id:'diff/text'};
++    this._isReadonly = options.isReadonly || true;
++    this._parentElement = null;
++    this._compareView = null;
++    this._isRendered = false;
++    /* Take care of metaData */
++    var compare = options.metaData.compare || { files: [{}, {}] };
++    this._files = [
++      {
++	name: compare.files[0].name || '',
++	type: compare.files[0].type || { id: 'text/plain' },
++	content: compare.files[0].content || '',
++      },
++      {
++	name: compare.files[1].name || '',
++	type: compare.files[1].type || { id: 'text/plain' },
++	content: compare.files[1].content || '',
++      }
++    ];
++    this._type = compare.type === 'inline' ? 'inline' : 'twoWay';
++  }
++
++  CompareEditor.prototype.getId = function () {
++    return this._id;
++  };
++
++  CompareEditor.prototype.isRendered = function () {
++    return this._isRendered;
++  };
++
++  CompareEditor.prototype.getParentDomElement = function() {
++    return this._parentElement;
++  };
++
++  CompareEditor.prototype.getContentType = function() {
++    return this._contentType;
++  };
++
++  CompareEditor.prototype._createCompareView = function (options, viewOptions) {
++    var view;
++    var vType = (options.type === "inline") ? "inline" : "twoWay";
++
++    if (options.toggleable) {
++      view = new mCompareView.toggleableCompareView(vType, viewOptions);
++    } else if (vType === "inline") {
++      view = new mCompareView.InlineCompareView(viewOptions);
++    } else {
++      view = new mCompareView.TwoWayCompareView(viewOptions);
++    }
++    if (!viewOptions.highlighters) {
++      view.getWidget().setOptions({
++	highlighters: [
++	  new mCompareHighlighter.DefaultHighlighter(),
++	  new mCompareHighlighter.DefaultHighlighter(),
++	]
++      });
++    }
++
++    return view;
++  }
++
++  CompareEditor.prototype.render = function (parentElement) {
++    var viewOptions = {};
++    var options = {
++      type: this._type,
++    };
++
++    if (parentElement.getAttribute('id') === null) {
++      parentElement.setAttribute('id', 'code-review-' + this._id);
++    }
++
++    viewOptions = {
++      parentDivId: parentElement.getAttribute('id'),
++      oldFile: {
++	Content: this._files[0].content,
++	readonly: true,
++	Name: this._files[0].name,
++	Type: this._files[0].type,
++      },
++      newFile: {
++	Content: this._files[1].content,
++	readonly: true,
++	Name: this._files[1].name,
++	Type: this._files[1].type,
++      },
++    }
++
++    console.log('parentDiv:', parentElement, '; id:', parentElement.getAttribute('id'));
++    this._parentElement = parentElement;
++    this._compareView = this._createCompareView(options, viewOptions);
++    this._compareView.startup();
++    this._isRendered = true;
++  };
++
++  CompareEditor.prototype.destroy = function () {
++    this._compareView.destroy();
++  };
++
++  CompareEditor.prototype.getOptions = function () {
++    return this._options;
++  };
++
++  CompareEditor.prototype.redraw = function () {
++    this._compareView.refresh(true);
++  };
++
++  CompareEditor.prototype.setContent = function(data) {
++    if (!_.isArray(data) || data.length !== 2) {
++      console.warn('expected array of length 2, got:', data);
++    }
++    if (!_.isArray(data)) {
++      this._compareView.getWidget().options.newFile.Content = data;
++    } else {
++      this._compareView.getWidget().options.oldFile.Content = data[0];
++      this._compareView.getWidget().options.newFile.Content = data[1];
++    }
++    this._compareView.refresh(true);
++  };
++
++  CompareEditor.prototype.setOldContent = function(data) {
++    this._compareView.getWidget().options.oldFile.Content = data;
++    this._compareView.refresh(true);
++  };
++
++  CompareEditor.prototype.setNewContent = function(data) {
++    this._compareView.getWidget().options.newFile.Content = data;
++    this._compareView.refresh(true);
++  };
++
++  /* XXX */
++  CompareEditor.prototype.getContent = function() {
++    console.error("CompareEditor::getContent() is not implemented");
++    return "";
++  };
++  CompareEditor.prototype.isDirty = function() {
++    console.error("CompareEditor::isDirty() is not implemented");
++    return false
++  };
++  CompareEditor.prototype.undo = function() {
++    console.error("CompareEditor::undo() is not implemented");
++  };
++  CompareEditor.prototype.canUndo = function() {
++    console.error("CompareEditor::canUndo() is not implemented");
++    return false;
++  };
++  CompareEditor.prototype.redo = function() {
++    console.error("CompareEditor::redo() is not implemented");
++  };
++  CompareEditor.prototype.canRedo = function() {
++    console.error("CompareEditor::canRedo() is not implemented");
++    return false;
++  };
++  CompareEditor.prototype.setAsSaved = function() {
++    console.error("CompareEditor::setAsSaved() is not implemented");
++  };
++  CompareEditor.prototype.openInPlaceMenu = function() {
++    console.error("CompareEditor::openInPlaceMenu() is not implemented");
++  };
++  CompareEditor.prototype.setCursorPosition = function(position) {
++    console.error("CompareEditor::setCursorPosition() is not implemented");
++  };
++  CompareEditor.prototype.getCursorPosition = function() {
++    console.error("CompareEditor::getCursorPosition() is not implemented");
++    return {line: 1, column:1};
++  };
++  CompareEditor.prototype.checkSyntax = function() {
++    console.error("CompareEditor::checkSyntax() is not implemented");
++  };
++  CompareEditor.prototype.setContentType = function(contentType) {
++    console.error("CompareEditor::setContentType() is not implemented");
++  };
++  CompareEditor.prototype.getTitle = function() {
++    console.error("CompareEditor::getTitle() is not implemented");
++    return '';
++  };
++  CompareEditor.prototype.isReadOnly = function() {
++    console.error("CompareEditor::isReadOnly() is not implemented");
++    return true;
++  };
++  CompareEditor.prototype.getSupportedTypes = function() {
++    console.error("CompareEditor::getSupportedTypes() is not implemented");
++    return ['diff/text'];
++  };
++
++  CompareEditor.prototype.getCompareView = function () {
++    return this._compareView;
++  };
++
++  console.log('compareView:', mCompareView);
++
++  return CompareEditor;
++});
+diff --git a/app/extensions/hpsw/orion-editor/1.00/modules/orion-compare/compareView.css b/app/extensions/hpsw/orion-editor/1.00/modules/orion-compare/compareView.css
+new file mode 100644
+index 0000000..9bebdc1
+--- /dev/null
++++ b/app/extensions/hpsw/orion-editor/1.00/modules/orion-compare/compareView.css
+@@ -0,0 +1,212 @@
++/* @import "../../orion/editor/editor.css"; */
++
++.diffNormal {
++	background: #DDDDDD;
++}
++
++.diffConflict {
++	background: #EEB4B4;
++}
++
++.diffNormalSelect {
++	background: #BBBBBB;
++}
++
++.diffConflictSelect {
++	background: #F08080;
++}
++
++.diffInlineAddedSelect {
++	background: #00B400;
++}
++
++.diffInlineAdded {
++	background: #99EE99;
++}
++
++.diffInlineRemovedSelect {
++	background: #B44040;
++}
++
++.diffInlineRemoved {
++	background: #EE9999;
++}
++
++.compareCanvas {
++	background: #EEEEEE;
++	border: 0;
++}
++
++.compareEditorParent {
++	clear: both;
++	overflow: hidden;
++    position: absolute;
++    top: 30px;  /* $Editor title Height */
++    bottom: 0;
++    left: 0;
++    width: 100%;
++	margin-bottom: 30px;  /* $Editor line number div height */   
++}
++
++.compareEditorParentWithCanvas {
++	clear: both;
++	overflow: hidden;
++    position: absolute;
++    left: 44px;
++    right: 0;
++	height:100%;
++}
++
++.canvasContainer {
++	position: absolute;
++	width:44px;
++	height:100%;
++	overflow: hidden;
++}
++
++.titleContainer {
++	width:100%;
++	height:30px;
++	overflow: hidden;
++	background: #EEEEEE;
++}
++
++.statusContainer {
++	position: absolute;
++	bottom:0;
++	width:100%;
++	height:30px;
++	overflow: hidden;
++	text-align: center;  
++}
++
++.leftPanelLayout {
++	display: block;
++	position: absolute;
++	left: 0;
++    overflow: hidden;
++	width: 50%;
++	height: 100%;
++}
++
++.rightPanelLayout {
++	display: block;
++	position: absolute;
++	right: 0;
++    overflow: hidden;
++	height: 100%;
++}
++
++.compareSplitLayout {
++	position: absolute;
++	left: 50%;  /* override this value if you want a different proportion of the two split panes */
++	height: 100%;
++	z-index: 50;
++	width: 3px;
++	cursor: e-resize;
++	background: #dedede;
++	visibility: hidden;  /* use visibility vs. display because we need a position in calculations */
++}
++
++/*** Styles for diff annotations ***/
++
++/** Styles for normal diff blocks **/
++
++/* The added block in the new file/left side, lightest green */
++.annotationLine.addedBlockDiff {
++	background-color: #B3E8B3;
++}
++
++/* The current added block in the new file/left side, 2nd lightest green */
++.annotationLine.currentAddedBlockDiff {
++	background-color: #8EDD8E;
++}
++
++/* The deleted block in the old file/right side, lightest red */
++.annotationLine.deletedBlockDiff {
++	background-color: #FFD2D2; /*'#FFEFEF;*/
++}
++
++/* The current deleted block in the old file/right side, 2nd lightest red */
++.annotationLine.currentDeletedBlockDiff {
++	background-color: #FFB0B0;
++}
++
++/* Style for an empty block, which draws a lighter black line on top of a line to indicate an insertion or deletion */
++/* diff-border.png */
++.annotationLine.blockDiffTopOnly {
++	background-image: url("data:image/png;base64,iVBORw0KGgoAAAANSUhEUgAAAC4AAAABCAIAAAAuIQuDAAAAAXNSR0IArs4c6QAAAARnQU1BAACxjwv8YQUAAAAJcEhZcwAADsMAAA7DAcdvqGQAAAAPSURBVBhXY6yvr2cYHAAAzPsBf2hZ98wAAAAASUVORK5CYII=");
++ 	background-repeat: repeat-x;
++ 	background-position: left top
++}
++
++/* Style for the current empty block, which draws a darker black line on top of a line to indicate an insertion or deletion */
++/* diff-border-sel.png */
++.annotationLine.currentBlockDiffTopOnly {
++	background-image: url("data:image/png;base64,iVBORw0KGgoAAAANSUhEUgAAAC4AAAABCAIAAAAuIQuDAAAAAXNSR0IArs4c6QAAAARnQU1BAACxjwv8YQUAAAAJcEhZcwAADsMAAA7DAcdvqGQAAAAMSURBVBhXY2AYNAAAAIsAAR6L5FUAAAAASUVORK5CYII=");
++ 	background-repeat: repeat-x;
++ 	background-position: left top
++}
++
++/** Styles for conflicting diff blocks **/
++
++/* The conflicting block in both the old file/right side and new file/left side, lighter yellow */
++.annotationLine.blockDiffConflict {
++	background-color: #FFFFCA;
++}
++
++/* The curent conflicting block in both the old file/right side and new file/left side, darker yellow */
++.annotationLine.currentBlockDiffConflict {
++	background-color: #FFFF5B;
++}
++
++/** Styles for diff words **/
++
++/* The added word in the new file/left side, 3rd lightest green */
++.annotationRange.addedWordDiff {
++	background-color: #63CF63;
++}
++
++/* The current added word in the new file/left side, darkest green */
++.annotationRange.currentAddedWordDiff {
++	background-color: #31A231;
++}
++
++/* The deleted word in the old file/right side, 3rd lightest red */
++.annotationRange.deletedWordDiff {
++	background-color: #EE9999;
++}
++
++/* The current deleted word in the old file/right side, darkest red */
++.annotationRange.currentDeletedWordDiff {
++	background-color: #E66868;
++}
++
++/* The following 4 styles are for the special annotations when presenting a position between 2 characters, which looks like a caret cursor.
++ * They are all using the same 18X2 PNG on either right or left side of a character.
++ * diff-empty-word-border-black.png
++ */
++
++.annotationRange.emptyDeletedWordDiffLeft {
++	background-image: url("data:image/png;base64,iVBORw0KGgoAAAANSUhEUgAAAAIAAAASCAYAAABxYA+/AAAAAXNSR0IArs4c6QAAAARnQU1BAACxjwv8YQUAAAAJcEhZcwAADsIAAA7CARUoSoAAAAAUSURBVBhXY2RgYPgPxAxMIGIwMgCpaAEjILHq8AAAAABJRU5ErkJggg==");
++ 	background-repeat: repeat-y;
++ 	background-position: left top
++}
++
++.annotationRange.emptyDeletedWordDiffRight {
++	background-image: url("data:image/png;base64,iVBORw0KGgoAAAANSUhEUgAAAAIAAAASCAYAAABxYA+/AAAAAXNSR0IArs4c6QAAAARnQU1BAACxjwv8YQUAAAAJcEhZcwAADsIAAA7CARUoSoAAAAAUSURBVBhXY2RgYPgPxAxMIGIwMgCpaAEjILHq8AAAAABJRU5ErkJggg==");
++ 	background-repeat: repeat-y;
++ 	background-position: right top
++}
++
++.annotationRange.emptyAddedWordDiffLeft {
++	background-image: url("data:image/png;base64,iVBORw0KGgoAAAANSUhEUgAAAAIAAAASCAYAAABxYA+/AAAAAXNSR0IArs4c6QAAAARnQU1BAACxjwv8YQUAAAAJcEhZcwAADsIAAA7CARUoSoAAAAAUSURBVBhXY2RgYPgPxAxMIGIwMgCpaAEjILHq8AAAAABJRU5ErkJggg==");
++ 	background-repeat: repeat-y;
++ 	background-position: left top
++}
++
++.annotationRange.emptyAddedWordDiffRight {
++	background-image: url("data:image/png;base64,iVBORw0KGgoAAAANSUhEUgAAAAIAAAASCAYAAABxYA+/AAAAAXNSR0IArs4c6QAAAARnQU1BAACxjwv8YQUAAAAJcEhZcwAADsIAAA7CARUoSoAAAAAUSURBVBhXY2RgYPgPxAxMIGIwMgCpaAEjILHq8AAAAABJRU5ErkJggg==");
++ 	background-repeat: repeat-y;
++ 	background-position: right top
++}
+diff --git a/app/extensions/hpsw/orion-editor/1.00/modules/orion-compare/orion-compare-module.js b/app/extensions/hpsw/orion-editor/1.00/modules/orion-compare/orion-compare-module.js
+new file mode 100644
+index 0000000..d7df116
+--- /dev/null
++++ b/app/extensions/hpsw/orion-editor/1.00/modules/orion-compare/orion-compare-module.js
+@@ -0,0 +1,20 @@
++define([
++  './compare-wrapper',
++], function(compareWrapper) {
++  'use strict';
++
++  var compareManifest = {
++    supportedTypes: [ 'diff/text' ],
++    Editor: compareWrapper,
++    name: "eclipse-orion-compare"
++  };
++
++  return {
++    config: [
++      'editors-serviceProvider',
++      function(editorsService) {
++        editorsService.registerEditor(compareManifest);
++      },
++    ]
++  };
++});

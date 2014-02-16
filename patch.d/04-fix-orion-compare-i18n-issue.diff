@@ -1,0 +1,23 @@
+--- node_modules/orion/lib/orion.client/bundles/org.eclipse.orion.client.ui/web/orion/compare/compareView.js~	2013-12-23 15:10:44.082050450 +0200
++++ node_modules/orion/lib/orion.client/bundles/org.eclipse.orion.client.ui/web/orion/compare/compareView.js	2013-12-23 15:01:36.686036434 +0200
+@@ -12,7 +12,7 @@
+ /*global define document console prompt window*/
+ /*jslint forin:true regexp:false sub:true*/
+ 
+-define(['i18n!orion/compare/nls/messages',
++define([/*'i18n!orion/compare/nls/messages',*/
+ 		'orion/Deferred',
+ 		'orion/webui/littlelib',
+ 		'orion/compare/diffParser',
+@@ -25,9 +25,10 @@
+         'orion/compare/compareUtils',
+         'orion/compare/jsdiffAdapter',
+         'orion/compare/diffTreeNavigator'],
+-function(messages, Deferred, lib, mDiffParser, mCompareRulers, mEditor, mEditorFeatures, mKeyBinding, mTextView,
++function(/*messages, */Deferred, lib, mDiffParser, mCompareRulers, mEditor, mEditorFeatures, mKeyBinding, mTextView,
+ 		 mCompareUIFactory, mCompareUtils, mJSDiffAdapter, mDiffTreeNavigator,  mTextMateStyler, mHtmlGrammar, mTextStyler) {
+ var exports = {};
++var messages = [];
+ /**
+  * @class An abstract comapre view class that holds all the common functions for both "side by side" and "unified" view.
+  * <p>

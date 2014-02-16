@@ -1,0 +1,80 @@
+commit 5ab802e138bb4693ac535ce0839c3f0cfd4f7524
+Author: korya <korya@github.com>
+Date:   Thu Feb 13 19:36:27 2014 +0200
+
+    [MISC] Fix ID in mongodb queries
+
+diff --git a/server/open-source/persistence/persistence-mongo.js b/server/open-source/persistence/persistence-mongo.js
+index 9bba89a..42fbc20 100644
+--- a/server/open-source/persistence/persistence-mongo.js
++++ b/server/open-source/persistence/persistence-mongo.js
+@@ -11,10 +11,18 @@ var path = require('path'),
+     MongoClient = require('mongodb').MongoClient,
+     Server = require('mongodb').Server,
+     Db = require('mongodb').Db,
++    ObjectID = require('mongodb').ObjectID,
+ 
+ 
+     mongoClient;
+ 
++function fix_Id(query) {
++  if (query._id && typeof query._id === 'string')
++  {
++      query._id = ObjectID(query._id);
++  }
++}
++
+ /**
+  * Gets a user mongo database (for now the db is:  process.env.USERNAME)
+  * @returns {Object}
+@@ -145,6 +153,7 @@ exports.drop = function (dbName, callback) {
+  * @return {Object} Call the callback function with the result, or with error=true and the error message in case of failure.
+  */
+ exports.get = function (dbName, collection, criteria, projection, callback) {
++    fix_Id(criteria);
+     _getDb(dbName).collection(collection).find(criteria, projection).toArray(function (err, docs) {
+         if (err || docs.length === 0) {
+             var msg = 'No result found. ';
+@@ -217,6 +226,7 @@ exports.insert = function (dbName, collection, value, callback) {
+  * @return {Object} Call the callback function with the result, or with error=true and the error message in case of failure.
+  */
+ exports.update = function (dbName, collection, query, update, callback) {
++    fix_Id(query);
+     _getDb(dbName).collection(collection).update(query, {$set: update}, function (err, result) {
+         if (err || !result) {
+             var msg = "Fail to update document. ";
+@@ -233,6 +243,26 @@ exports.update = function (dbName, collection, query, update, callback) {
+     });
+ };
+ 
++
++/* XXX Not duplicated in persistence-mock.js */
++exports.updateArrayPush = function (dbName, collection, query, value, callback) {
++    fix_Id(query);
++    _getDb(dbName).collection(collection).update(query, {$push: value},function (err, result) {
++        if (err || !result) {
++            var msg = "Fail to update document. ";
++            if (err !== null) {
++                msg += err;
++            }
++            logger.error(msg);
++            callback(true, msg);
++        }
++        else {
++            logger.info("Document updated.[Collection:" + collection + "]");
++            callback(null, "Total updated:" + result);
++        }
++    });
++};
++
+ /**
+  * Removes documents from a collection.
+  *
+@@ -244,6 +274,7 @@ exports.update = function (dbName, collection, query, update, callback) {
+  * @return {Object} Call the callback function with the result, or with error=true and the error message in case of failure.
+  */
+ exports.delete = function (dbName, collection, query, callback) {
++    fix_Id(query);
+     _getDb(dbName).collection(collection).remove(query, function (err, result) {
+         if (err || !result) {
+             var msg = "Fail to delete document. ";

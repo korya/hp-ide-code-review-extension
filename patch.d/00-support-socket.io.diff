@@ -1,0 +1,43 @@
+commit 41b3b37b2171ae4e15864f6da38aca89f55b2035
+Author: korya <korya@github.com>
+Date:   Thu Feb 13 19:26:03 2014 +0200
+
+    Support socket.io on server side
+
+diff --git a/server/server.js b/server/server.js
+index e559c51..caea0d9 100644
+--- a/server/server.js
++++ b/server/server.js
+@@ -16,6 +16,7 @@ var moduleLoader = require('./core/module-loader'),
+     path = require('path'),
+     app = express(),
+     logger = require('./core/logging').getLogger('server'),
++    io = require('socket.io'),
+     Q = require('q');
+ var url = require('url');
+ 
+@@ -64,8 +65,15 @@ function init() {
+  */
+ function afterInit() {
+     logger.info('after init method');
++
++    var httpServer = http.createServer(app);
++    var ios = io.listen(httpServer);
++
++    ios.set('log level', 1);
++
+     // Configuration for all environments
+     app.set('view engine', 'ejs');
++    app.set('io', ios);
+ 
+     moduleLoader.triggerPreInitMiddleware(app);
+     app.use(express.favicon());
+@@ -92,7 +100,7 @@ function afterInit() {
+ 
+     app.set('port', config.serverSettings().port);
+ 
+-    http.createServer(app).listen(app.get('port'), function () {
++    httpServer.listen(app.get('port'), function () {
+         logger.info('Server listening on port ' + app.get('port'));
+     });
+ }

@@ -1,0 +1,19 @@
+commit ae9e6310938dc30d0a0a97870fa6935e08f31bbc
+Author: korya <korya@github.com>
+Date:   Thu Feb 13 19:36:58 2014 +0200
+
+    [MISC] Fix for IDE layout
+
+diff --git a/app/extensions/hpsw/layout/1.00/modules/ide-layout.js b/app/extensions/hpsw/layout/1.00/modules/ide-layout.js
+index ec398bc..ad93c53 100644
+--- a/app/extensions/hpsw/layout/1.00/modules/ide-layout.js
++++ b/app/extensions/hpsw/layout/1.00/modules/ide-layout.js
+@@ -807,7 +807,7 @@ define([
+ 										parentPaneId: _pane
+ 									}
+ 								);
+-								this.appended = true;
++								this._appended = true;
+ 							};
+ 
+ 							this.select = function() {
