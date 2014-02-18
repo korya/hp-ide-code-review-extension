@@ -11,6 +11,11 @@ slug: links
  - [Notification extension](https://github.com/korya/hp-ide-notification-extension)
  - [Git extension](https://github.com/korya/hp-ide-git-extension)
  - [Node Git Rest API](https://github.com/korya/node-git-rest-api)
+
+#### Project misc.
+
+ - [Deliverable site](./misc/deliverable.zip)
+ - [Kickoff Presentation](./misc/collaboration-project.ppsx)
  - [Final Presentation](http://prezi.com/lyafgzx97xxk/code-review-system-for-hp-web-ide)
 
 #### Technologies
