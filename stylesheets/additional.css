@@ -135,3 +135,6 @@ div#footer {
   border-top: 1px solid #cccccc;
 }
 
+img#logo-image {
+  max-height: 100%;
+}
