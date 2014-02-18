@@ -1,6 +1,7 @@
 ---
 layout: default
 title: "Project Objectives"
+slug: objectives
 ---
 ## Intro
 
@@ -13,18 +14,18 @@ to enrich its functionality and share it.
 
 ## Goals
 
-The main goal of this project is to develop an integrated offline code review system
-to the IDE. The system should be an extension for the IDE allowing any developer to easily
-create and send a code review request to his colleagues. 
+The goal of the project is to develop an integrated offline code review system
+for the IDE. The system should be an extension for the IDE allowing any developer to easily
+create and send a code review request to his colleagues and get a feedback.
 
 ## Requirements
 
-Most basic requirements:
-  - select changes for review
-  - send request
-  - persist the request in the server
-  - push notification to code reviewer
-  - dedicated view for changes that should:
+#### Basic requirements
+
+  - user should be able to select changes for review
+  - server should persist the request in its DB
+  - server should send a push notification to a reviewer
+  - there should be a dedicated view for reviewing allowing to:
     - show file tree of changed files
     - highlight added and removed lines
     - allow navigation between changed lines
@@ -32,10 +33,11 @@ Most basic requirements:
     - approve/reject the review
     - update code review
 
-Enhancements:
-  - choose the code reviewer
+#### Enhancements
+
+These requirements are not mandatory to implement:
+  - user should be able to select a reviewer
   - integrate with source control (git or general)
-  - support other changes types
   - approve/reject per change/file 
 
 ## Risks
@@ -48,7 +50,9 @@ The 2 most risky parts of the project:
 
 The most basic use case. A developer has just finished and committed a new feature to its local repository. He has run some tests and the feature seems to work perfect. But before he pulls the changes to the main branch in the central repository, he would like to get a feedback from his colleagues.
 
-![Code Review collaboration example](https://raw.github.com/korya/hp-ide-code-review-extension/gh-pages/images/collaboration-screen.png)
+[
+![Code Review collaboration example](./images/collaboration-screen.png)
+](./images/collaboration-screen.png)
 
 1. So the developer creates a new code request:
    - selects the changes to be reviewed

@@ -1,9 +1,9 @@
 ---
 layout: default
 title: "Project Methodology"
+lead: "A methodology used during the project starting from the development process to the technologies"
+slug: methodology
 ---
-
-A methodology used during the project starting from the development process to the technologies used in the project.
 
 ## Development Process
 
@@ -28,7 +28,7 @@ The project is divided to 3 main milestones:
        - store these requests
        - forward them to the reviewer
 
-   The first one of 2 project risks is handled in the milestone.
+   The first one of 2 [project risks](./objectives.html#risks) is handled in the milestone.
 
 2. **Integrate Orion's Compare widget**
 
@@ -36,7 +36,7 @@ The project is divided to 3 main milestones:
    - integrate Orion's Compare widget
    - user can see a diff of 2 files in Orion's Compare widget
 
-   The second one of 2 project risks is handled in the milestone.
+   The second one of 2  [project risks](./objectives.html#risks) is handled in the milestone.
 
 3. **Develop a Code Review extension**
 

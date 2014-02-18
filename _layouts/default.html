@@ -1,0 +1,84 @@
+<!DOCTYPE html>
+<html lang="en">
+  <head>
+    <meta charset="utf-8">
+
+    <title>{{ page.title }}</title>
+
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <meta name="description" content="{{ page.description }}">
+
+    <link rel="stylesheet" href="/stylesheets/united.bootstrap.min.css">
+    <link rel="stylesheet" href="/stylesheets/additional.css">
+
+    <script src="/bower_components/jquery/jquery.min.js"></script>
+    <script src="/bower_components/bootstrap/dist/js/bootstrap.min.js"></script>
+
+    <script>
+      function init() {
+	$('#sidebar').affix({
+	  offset: {
+	    top: 70,
+	    bottom: function () {
+	      return (this.bottom = $('.footer').outerHeight(true))
+	    }
+	  }
+	})
+	$('body').scrollspy({ target: '#sidebar' })
+      }
+    </script>
+
+    <!-- HTML5 shim, for IE6-8 support of HTML5 elements -->
+    <!--[if lt IE 9]>
+      <script src="http://html5shim.googlecode.com/svn/trunk/html5.js"></sc\
+ript>
+    <![endif]-->
+  </head>
+
+  <body onload="init()">
+
+    <a class="sr-only" href="#content">Skip to main content</a>
+
+    <div id="top">
+      {% include navbar.html %}
+    </div>
+
+    <div class="bs-header" id="content">
+      <div class="container">
+        <h1>{{ page.title }}</h1>
+        <p>{{ page.lead }}</p>
+      </div>
+    </div>
+
+    <div class="container">
+        <div class="col-md-9" role="main">
+          {{ content }}
+        </div>
+        <div class="col-md-3">
+          <div id="sidebar" class="bs-sidebar hidden-print" role="complementary">
+            <ul class="nav bs-sidenav">
+              {% if page.slug == "objectives" %}
+                {% include nav-objectives.html %}
+              {% elsif page.slug == "methodology" %}
+                {% include nav-methodology.html %}
+              {% elsif page.slug == "achievements" %}
+                {% include nav-achievements.html %}
+              {% elsif page.slug == "installation" %}
+                {% include nav-installation.html %}
+              {% elsif page.slug == "links" %}
+                {% include nav-links.html %}
+              {% endif %}
+            </ul>
+            <ul class="nav">
+	      <li>
+		<a class="back-to-top" href="#top">Back to top</a>
+	      </li>
+            </ul>
+          </div>
+        </div>
+    </div>
+
+    {% include footer.html %}
+
+  </body>
+</html>
