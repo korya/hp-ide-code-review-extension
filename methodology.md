@@ -8,7 +8,7 @@ slug: methodology
 ## Development Process
 
 The most important reason why this project has succeeded is the development process that was enforced on me by my supervisor
-[![in](https://raw.github.com/korya/hp-ide-code-review-extension/gh-pages/images/linkedin-logo-icon.png)Liron Tzabari](http://www.linkedin.com/pub/liron-tzabari/60/114/a59).
+[![in](./images/linkedin-logo-icon.png)Liron Tzabari](http://www.linkedin.com/pub/liron-tzabari/60/114/a59).
 Thanks, Liron! It really helped me to keep focused.
 
 ### Milestones

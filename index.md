@@ -11,9 +11,9 @@ in
 [Technion](http://www.technion.ac.il/).
 
 The project was performed by
-[![in](https://raw.github.com/korya/hp-ide-code-review-extension/gh-pages/images/linkedin-logo-icon.png)Kochelorov Dmitri](http://lnkd.in/abnTS6)
+[![in](./images/linkedin-logo-icon.png)Kochelorov Dmitri](http://lnkd.in/abnTS6)
 under the supervision of
-[![in](https://raw.github.com/korya/hp-ide-code-review-extension/gh-pages/images/linkedin-logo-icon.png)Liron Tzabari](http://www.linkedin.com/pub/liron-tzabari/60/114/a59)
+[![in](./images/linkedin-logo-icon.png)Liron Tzabari](http://www.linkedin.com/pub/liron-tzabari/60/114/a59)
 from [HP Software](http://www.hp.com/).
 
 See further:
