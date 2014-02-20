@@ -29,6 +29,7 @@ slug: links
  - [RequireJS](http://requirejs.org)
  - [Jquery](http://jquery.com)
  - [AngularJS](http://angularjs.org)
+ - [Websocket Protocol](https://tools.ietf.org/html/rfc6455)
 
 #### Other links
 
