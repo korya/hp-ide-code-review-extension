@@ -3,6 +3,16 @@
 The extension allows the developers to easily create code reviews (aka pull requests),
 send them to others and get a feedback.
 
+
+The extension was developed in the framework of
+[winter13-14 "Industrial Project" course](http://www.cs.technion.ac.il/~cs234313/projects/#semester#W14)
+of
+[Computer Science faculty](http://www.cs.technion.ac.il/)
+in
+[Technion](http://www.technion.ac.il/). The goal of the project was to develop an integrated offline code review system for HP web-based IDE that allows any developer to easily
+create and send a code review request to his colleagues and get a feedback.
+
+
 ## Install
 
 Fast and easy way:
