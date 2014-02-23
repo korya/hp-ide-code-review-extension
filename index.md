@@ -4,7 +4,7 @@ title: "Code Review system for HP web-based IDE"
 ---
 
 Code Review system for HP web-based IDE was developed in the framework of
-[winter13-14 "Industrial Project" course](http://webcourse.cs.technion.ac.il/234313/Winter2013-2014/)
+[winter13-14 "Industrial Project" course](http://www.cs.technion.ac.il/~cs234313/projects/#semester#W14)
 of
 [Computer Science faculty](http://www.cs.technion.ac.il/)
 in
